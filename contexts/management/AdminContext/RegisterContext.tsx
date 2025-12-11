@@ -1,4 +1,6 @@
 // contexts/management/AdminContext/RegisterContext.tsx
+"use client";
+
 import { createContext, useContext, useState, ReactNode } from 'react';
 
 export interface RegisterData {

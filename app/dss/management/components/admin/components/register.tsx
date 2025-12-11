@@ -1,4 +1,6 @@
 // components/management/admin/components/register.tsx
+"use client";
+
 import { useState } from 'react';
 import { User, Mail, Lock, Building2, Briefcase, Plus, X } from 'lucide-react';
 import { useRegister, RegisterData } from '@/contexts/management/AdminContext/RegisterContext';

@@ -1,4 +1,6 @@
 // contexts/management/EmployeeContext/LoginContext.tsx
+"use client";
+
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
 interface User {

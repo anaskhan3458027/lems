@@ -1,4 +1,6 @@
 // components/management/employee/components/register.tsx
+"use client";
+
 import { useState, useEffect, ChangeEvent } from 'react';
 import { User, Mail, Lock, Building2, Briefcase, UserCheck, Calendar, Briefcase as BriefcaseIcon } from 'lucide-react';
 import {

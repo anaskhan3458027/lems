@@ -1,4 +1,6 @@
 // contexts/management/EmployeeContext/RegisterContext.tsx
+"use client";
+
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
 export interface RegisterData {

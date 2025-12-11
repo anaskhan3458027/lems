@@ -1,4 +1,6 @@
 // contexts/management/AdminContext/LoginContext.tsx
+"use client";
+
 import { createContext, useContext, useState, ReactNode } from 'react';
 
 interface LoginContextType {

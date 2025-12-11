@@ -1,4 +1,6 @@
 // components/management/admin/components/login.tsx
+"use client";
+
 import { useState } from 'react';
 import { User, Mail, Lock } from 'lucide-react';
 import { useLogin } from '@/contexts/management/AdminContext/LoginContext';
