@@ -2,10 +2,12 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 
 export default function Home() {
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [showInstall, setShowInstall] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     const handler = (e: any) => {
@@ -20,17 +22,21 @@ export default function Home() {
 
   const installApp = async () => {
     if (!deferredPrompt) return;
+
     deferredPrompt.prompt();
     const result = await deferredPrompt.userChoice;
+
     if (result.outcome === "accepted") {
       setShowInstall(false);
+
+      // 🔥 Redirect to DSS page after installation
+      router.push("/dss/management");
     }
   };
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-zinc-100">
       <main className="w-full max-w-xl rounded-xl bg-white p-10 shadow-xl text-center">
-        
         <Image
           src="/icons/leaf.png"
           alt="App Logo"
@@ -43,7 +49,6 @@ export default function Home() {
           Institute Project Staff Management
         </h1>
 
-
         {showInstall && (
           <button
             onClick={installApp}
@@ -52,8 +57,6 @@ export default function Home() {
             Install App
           </button>
         )}
-
-        
       </main>
     </div>
   );
