@@ -1,0 +1,21 @@
+{
+  "name": "Institute Project Staff Management",
+  "short_name": "Staff Manager",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#0f172a",
+  "description": "A web application for managing institute project staff efficiently.",
+  "icons": [
+    {
+      "src": "/icons/leaf.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/management.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
