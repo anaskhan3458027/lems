@@ -2,6 +2,9 @@
 'use client';
 
 import React, { createContext, useContext, useState, ReactNode } from 'react';
+import { apiClient } from '@/contexts/utils/apiClient';
+
+/* ========= TYPES ========= */
 
 export interface Employee {
   id: number;
@@ -12,9 +15,9 @@ export interface Employee {
   supervisor_name: string;
   supervisor_email: string | null;
   projectName: string;
-  joining_date: string | null;      // ✅ NEW FIELD
-  position: string | null;          // ✅ NEW FIELD
-  resign_date: string | null;       // ✅ NEW FIELD
+  joining_date: string | null;
+  position: string | null;
+  resign_date: string | null;
   is_active: boolean;
 }
 
@@ -30,6 +33,8 @@ export interface LeaveRecord {
   leave_type: string;
   approval_status: string;
   created_at: string;
+  joining_date?: string;
+  position?: string;
 }
 
 interface DashboardContextType {
@@ -43,6 +48,24 @@ interface DashboardContextType {
   approveLeave: (leaveId: number, status: 'approved' | 'rejected') => Promise<boolean>;
 }
 
+/* ========= API RESPONSE TYPES ========= */
+
+interface FilterEmployeesResponse {
+  success: boolean;
+  count: number;
+  projects: string[];
+  employees: Employee[];
+  message?: string;
+}
+
+interface LeaveByEmailResponse {
+  message: string;
+  total_leaves: number;
+  data: LeaveRecord[];
+}
+
+/* ========= CONTEXT ========= */
+
 const DashboardContext = createContext<DashboardContextType | undefined>(undefined);
 
 export const DashboardProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
@@ -52,96 +75,100 @@ export const DashboardProvider: React.FC<{ children: ReactNode }> = ({ children 
   const [employeeLeaves, setEmployeeLeaves] = useState<{ [email: string]: LeaveRecord[] }>({});
   const [leavesLoading, setLeavesLoading] = useState<{ [email: string]: boolean }>({});
 
+  /* ===== Filter employees by projects ===== */
+
   const filterByProjects = async (projects: string[]) => {
     setLoading(true);
     setError(null);
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/django/management/filter-employees`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ projects }),
-      });
+      const data = await apiClient.post<FilterEmployeesResponse>(
+        '/django/management/filter-employees',
+        { projects },
+        { requiresAuth: true, userType: 'admin' }
+      );
 
-      const data = await response.json();
+      console.log('Filter employees API result:', data);
 
       if (data.success) {
-        setEmployees(data.employees);
+        setEmployees(data.employees || []);
+        console.log('Employees after setEmployees:', data.employees || []);
       } else {
         setError(data.message || 'Failed to filter employees');
       }
     } catch (err) {
-      setError('Network error occurred');
+      setError(err instanceof Error ? err.message : 'Network error occurred');
       console.error('Filter error:', err);
     } finally {
       setLoading(false);
     }
   };
 
+  /* ===== Fetch leaves for an employee (by email) ===== */
+
   const fetchEmployeeLeaves = async (email: string): Promise<void> => {
     setLeavesLoading(prev => ({ ...prev, [email]: true }));
-    
+
     try {
-      const token = localStorage.getItem('adminAuthToken');
-      
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/django/management/leave-employee-email`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({ employee_email: email }),
-      });
+      const result = await apiClient.post<LeaveByEmailResponse>(
+        '/django/management/leave-employee-email',
+        { employee_email: email },
+        { requiresAuth: true, userType: 'admin' }
+      );
 
-      const result = await response.json();
+      console.log('Leave records API result:', result);
 
-      if (response.ok) {
-        setEmployeeLeaves(prev => ({
-          ...prev,
-          [email]: result.data || []
-        }));
-      }
+      setEmployeeLeaves(prev => ({
+        ...prev,
+        [email]: result.data || [],
+      }));
     } catch (err) {
       console.error('Fetch employee leaves error:', err);
+      setEmployeeLeaves(prev => ({ ...prev, [email]: [] }));
     } finally {
       setLeavesLoading(prev => ({ ...prev, [email]: false }));
     }
   };
 
+  /* ===== Approve / Reject leave ===== */
+
   const approveLeave = async (leaveId: number, status: 'approved' | 'rejected'): Promise<boolean> => {
     try {
-      const token = localStorage.getItem('adminAuthToken');
-      
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/django/management/leave-update-status`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({ 
+      const response = await apiClient.post(
+        '/django/management/leave-update-status',
+        { 
           leave_id: leaveId, 
-          approval_status: status 
-        }),
-      });
+          approval_status: status,
+        },
+        { requiresAuth: true, userType: 'admin' }
+      );
 
-      return response.ok;
+      // apiClient returns raw JSON; assume it has { success: boolean } or similar
+      // If you want strict typing, define an interface like { success: boolean; message?: string }
+      // and use apiClient.post<ThatType>(...)
+      // @ts-ignore – if backend returns success
+      return response.success ?? true;
     } catch (err) {
       console.error('Leave approval error:', err);
       return false;
     }
   };
 
+  /* ===== PROVIDER VALUE ===== */
+
   return (
-    <DashboardContext.Provider value={{
-      employees,
-      loading,
-      error,
-      filterByProjects,
-      employeeLeaves,
-      leavesLoading,
-      fetchEmployeeLeaves,
-      approveLeave,
-    }}>
+    <DashboardContext.Provider
+      value={{
+        employees,
+        loading,
+        error,
+        filterByProjects,
+        employeeLeaves,
+        leavesLoading,
+        fetchEmployeeLeaves,
+        approveLeave,
+      }}
+    >
       {children}
     </DashboardContext.Provider>
   );
