@@ -84,7 +84,7 @@ export const DashboardProvider: React.FC<{ children: ReactNode }> = ({ children 
     try {
       const token = localStorage.getItem('adminAuthToken');
       
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/django/management/leave-employee-email/`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/django/management/leave-employee-email`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
