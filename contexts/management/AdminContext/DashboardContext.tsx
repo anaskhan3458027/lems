@@ -1,7 +1,10 @@
 // contexts/management/AdminContext/DashboardContext.tsx
+// ✅ Example using the new API client for secure requests
+
 'use client';
 
 import React, { createContext, useContext, useState, ReactNode } from 'react';
+import { apiClient, ApiResponse } from '@/contexts/utils/apiClient';
 
 export interface Employee {
   id: number;
@@ -12,9 +15,9 @@ export interface Employee {
   supervisor_name: string;
   supervisor_email: string | null;
   projectName: string;
-  joining_date: string | null;      // ✅ NEW FIELD
-  position: string | null;          // ✅ NEW FIELD
-  resign_date: string | null;       // ✅ NEW FIELD
+  joining_date: string | null;
+  position: string | null;
+  resign_date: string | null;
   is_active: boolean;
 }
 
@@ -57,21 +60,20 @@ export const DashboardProvider: React.FC<{ children: ReactNode }> = ({ children 
     setError(null);
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/django/management/filter-employees`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ projects }),
-      });
-
-      const data = await response.json();
+      // ✅ Using API client - automatically adds token
+      const data = await apiClient.post<ApiResponse<{ employees: Employee[] }>>(
+        '/django/management/filter-employees',
+        { projects },
+        { requiresAuth: true, userType: 'admin' }
+      );
 
       if (data.success) {
-        setEmployees(data.employees);
+        setEmployees(data.data?.employees || []);
       } else {
         setError(data.message || 'Failed to filter employees');
       }
     } catch (err) {
-      setError('Network error occurred');
+      setError(err instanceof Error ? err.message : 'Network error occurred');
       console.error('Filter error:', err);
     } finally {
       setLoading(false);
@@ -82,27 +84,22 @@ export const DashboardProvider: React.FC<{ children: ReactNode }> = ({ children 
     setLeavesLoading(prev => ({ ...prev, [email]: true }));
     
     try {
-      const token = localStorage.getItem('adminAuthToken');
-      
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/django/management/leave-employee-email/`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({ employee_email: email }),
-      });
+      // ✅ Using API client with authentication
+      const result = await apiClient.post<ApiResponse<{ data: LeaveRecord[] }>>(
+        '/django/management/leave-employee-email/',
+        { employee_email: email },
+        { requiresAuth: true, userType: 'admin' }
+      );
 
-      const result = await response.json();
-
-      if (response.ok) {
+      if (result.success) {
         setEmployeeLeaves(prev => ({
           ...prev,
-          [email]: result.data || []
+          [email]: result.data?.data || []
         }));
       }
     } catch (err) {
       console.error('Fetch employee leaves error:', err);
+      setEmployeeLeaves(prev => ({ ...prev, [email]: [] }));
     } finally {
       setLeavesLoading(prev => ({ ...prev, [email]: false }));
     }
@@ -110,21 +107,17 @@ export const DashboardProvider: React.FC<{ children: ReactNode }> = ({ children 
 
   const approveLeave = async (leaveId: number, status: 'approved' | 'rejected'): Promise<boolean> => {
     try {
-      const token = localStorage.getItem('adminAuthToken');
-      
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/django/management/leave-update-status`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({ 
+      // ✅ Using API client with authentication
+      const response = await apiClient.post<ApiResponse>(
+        '/django/management/leave-update-status',
+        { 
           leave_id: leaveId, 
           approval_status: status 
-        }),
-      });
+        },
+        { requiresAuth: true, userType: 'admin' }
+      );
 
-      return response.ok;
+      return response.success;
     } catch (err) {
       console.error('Leave approval error:', err);
       return false;

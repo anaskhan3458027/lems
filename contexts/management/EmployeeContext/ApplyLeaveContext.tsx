@@ -75,7 +75,7 @@ export const LeaveProvider = ({ children }: { children: ReactNode }) => {
       const token = localStorage.getItem('employeeAuthToken');
       
       // ✅ POST request with employee_email (matches your backend)
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/django/management/leave-employee-email/`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/django/management/leave-employee-email`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -154,7 +154,7 @@ export const LeaveProvider = ({ children }: { children: ReactNode }) => {
 
       const token = localStorage.getItem('employeeAuthToken');
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/django/management/apply-leave/`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/django/management/apply-leave`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
