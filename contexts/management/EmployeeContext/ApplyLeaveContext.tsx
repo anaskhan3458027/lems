@@ -79,7 +79,7 @@ export const LeaveProvider = ({ children }: { children: ReactNode }) => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          ...(token ? { Authorization: `Token ${token}` } : {}),
         },
         body: JSON.stringify({
           employee_email: user.email  // ✅ Required by your backend
@@ -158,7 +158,7 @@ export const LeaveProvider = ({ children }: { children: ReactNode }) => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          ...(token ? { Authorization: `Token ${token}` } : {}),
         },
         body: JSON.stringify(payload),
       });
