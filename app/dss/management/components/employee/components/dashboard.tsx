@@ -21,10 +21,12 @@ import {
   RefreshCw,
   CalendarDays,
   Briefcase as BriefcaseIcon,
+  TrendingUp,
 } from 'lucide-react';
 import { useLogin } from '@/contexts/management/EmployeeContext/LoginContext';
 import { useLeave } from '@/contexts/management/EmployeeContext/ApplyLeaveContext';
 import LeaveRequestForm from './applyleave';
+import LeaveBalanceCalculator from './leaveBalance';
 
 export default function EmployeeDashboard() {
   const { user, logout, isLoading } = useLogin();
@@ -32,6 +34,7 @@ export default function EmployeeDashboard() {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [showLeaveForm, setShowLeaveForm] = useState(false);
   const [showLeaveHistory, setShowLeaveHistory] = useState(false);
+  const [showLeaveBalance, setShowLeaveBalance] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   if (!user) {
@@ -39,10 +42,10 @@ export default function EmployeeDashboard() {
   }
 
   useEffect(() => {
-    if (showLeaveHistory && user?.email) {
+    if ((showLeaveHistory || showLeaveBalance) && user?.email) {
       handleRefreshLeaves();
     }
-  }, [showLeaveHistory]);
+  }, [showLeaveHistory, showLeaveBalance]);
 
   const handleRefreshLeaves = async () => {
     if (!user?.email) return;
@@ -156,8 +159,8 @@ export default function EmployeeDashboard() {
           </div>
         )}
 
-        {/* Statistics Cards - Grid with 5 cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
+        {/* Statistics Cards - Grid with 6 cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
           {/* Total Leaves Card */}
           <div className="bg-white rounded-xl shadow-lg p-6 border-l-4 border-purple-500 transform hover:scale-105 transition-all hover:shadow-xl cursor-pointer group" onClick={() => setShowLeaveHistory(!showLeaveHistory)}>
             <div className="flex items-center justify-between">
@@ -172,6 +175,25 @@ export default function EmployeeDashboard() {
             <p className="text-xs text-purple-600 mt-2 font-medium flex items-center gap-1">
               {showLeaveHistory ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
               {showLeaveHistory ? 'Hide' : 'View'} History
+            </p>
+          </div>
+
+          {/* Leave Balance Card */}
+          <div className="bg-white rounded-xl shadow-lg p-6 border-l-4 border-indigo-500 transform hover:scale-105 transition-all hover:shadow-xl cursor-pointer group" onClick={() => setShowLeaveBalance(!showLeaveBalance)}>
+            <div className="flex items-center justify-between">
+              <div className="flex-1 min-w-0">
+                <p className="text-gray-500 text-sm font-medium mb-1">Leave Balance</p>
+                <p className="text-3xl font-bold text-indigo-600 group-hover:text-indigo-700">
+                  {user.joining_date ? '📊' : 'N/A'}
+                </p>
+              </div>
+              <div className="bg-indigo-100 p-3 rounded-lg flex-shrink-0 group-hover:bg-indigo-200 transition-all">
+                <TrendingUp className="w-8 h-8 text-indigo-500" />
+              </div>
+            </div>
+            <p className="text-xs text-indigo-600 mt-2 font-medium flex items-center gap-1">
+              {showLeaveBalance ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+              {showLeaveBalance ? 'Hide' : 'View'} Balance
             </p>
           </div>
 
@@ -203,7 +225,7 @@ export default function EmployeeDashboard() {
             </div>
           </div>
 
-          {/* ✅ Position Card */}
+          {/* Position Card */}
           <div className="bg-white rounded-xl shadow-lg p-6 border-l-4 border-blue-500 transform hover:scale-105 transition-all hover:shadow-xl">
             <div className="flex items-center justify-between">
               <div className="flex-1 min-w-0">
@@ -218,7 +240,7 @@ export default function EmployeeDashboard() {
             </div>
           </div>
 
-          {/* ✅ Joining Date Card */}
+          {/* Joining Date Card */}
           <div className="bg-white rounded-xl shadow-lg p-6 border-l-4 border-orange-500 transform hover:scale-105 transition-all hover:shadow-xl">
             <div className="flex items-center justify-between">
               <div className="flex-1 min-w-0">
@@ -250,6 +272,45 @@ export default function EmployeeDashboard() {
           <h3 className="text-xl font-bold mb-1">Apply for Leave</h3>
           <p className="text-purple-100 text-sm">Submit a new request</p>
         </div>
+
+        {/* Leave Balance Section */}
+        {showLeaveBalance && (
+          <div className="mb-8">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
+                <TrendingUp className="w-7 h-7 text-indigo-500" />
+                Leave Balance Calculator
+              </h2>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleRefreshLeaves}
+                  disabled={isRefreshing || loadingLeaves}
+                  className="p-2 hover:bg-indigo-50 rounded-full transition-all disabled:opacity-50 disabled:cursor-not-allowed group"
+                  title="Refresh leave data"
+                >
+                  <RefreshCw className={`w-5 h-5 text-indigo-500 ${isRefreshing ? 'animate-spin' : 'group-hover:rotate-180 transition-transform duration-500'}`} />
+                </button>
+                <button
+                  onClick={() => setShowLeaveBalance(false)}
+                  className="p-2 hover:bg-gray-100 rounded-full transition-all"
+                >
+                  <X className="w-5 h-5 text-gray-500" />
+                </button>
+              </div>
+            </div>
+            
+            {loadingLeaves || isRefreshing ? (
+              <div className="flex items-center justify-center py-12 bg-white rounded-xl shadow-lg">
+                <div className="text-center">
+                  <div className="w-12 h-12 border-4 border-indigo-200 border-t-indigo-500 rounded-full animate-spin mx-auto mb-4"></div>
+                  <p className="text-gray-500">Loading leave balance...</p>
+                </div>
+              </div>
+            ) : (
+              <LeaveBalanceCalculator user={user} leaves={leaves} />
+            )}
+          </div>
+        )}
 
         {/* Leave History */}
         {showLeaveHistory && (
@@ -305,7 +366,6 @@ export default function EmployeeDashboard() {
                       </div>
                     </div>
                     
-                    {/* ✅ NEW: Display Position and Joining Date from Leave Record */}
                     <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-lg p-3 mb-3 border border-blue-200">
                       <div className="grid grid-cols-2 gap-2 text-xs">
                         <div>
@@ -393,21 +453,18 @@ export default function EmployeeDashboard() {
                 {user.department || 'N/A'}
               </p>
             </div>
-            {/* ✅ Position */}
             <div className="p-4 bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg border border-gray-200">
               <p className="text-sm text-gray-500 font-medium mb-1">Position</p>
               <p className="text-lg font-semibold text-gray-800">
                 {user.position || 'N/A'}
               </p>
             </div>
-            {/* ✅ Joining Date */}
             <div className="p-4 bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg border border-gray-200">
               <p className="text-sm text-gray-500 font-medium mb-1">Joining Date</p>
               <p className="text-lg font-semibold text-gray-800">
                 {user.joining_date ? formatDate(user.joining_date) : 'N/A'}
               </p>
             </div>
-            {/* ✅ Resign Date (only show if exists) */}
             {user.resign_date && (
               <div className="p-4 bg-gradient-to-br from-red-50 to-red-100 rounded-lg border border-red-200">
                 <p className="text-sm text-red-500 font-medium mb-1">Resign Date</p>
@@ -497,9 +554,6 @@ export default function EmployeeDashboard() {
             <h3 className="text-xl font-semibold text-gray-800 mb-2">
               No Project Assigned
             </h3>
-            <p className="text-gray-500">
-              You don't have any project assigned at the moment.
-            </p>
             <p className="text-sm text-gray-400 mt-2">
               Contact your supervisor for project assignment.
             </p>

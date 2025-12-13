@@ -60,9 +60,11 @@ export default function AdminRegister({ onSwitchToLogin, onRegisterSuccess }: Re
 
   const projectOptions = [
     { value: 'DSS', label: 'DSS' },
-    { value: 'SLCR', label: 'SLCR' },
-    { value: 'Danish', label: 'Danish' },
-    { value: 'Kumbh', label: 'Kumbh' }
+    { value: 'SLCR(NMCG)', label: 'SLCR(NMCG)' },
+    { value: 'SLCR(Danish)', label: 'SLCR(Danish)' },
+    { value: 'HMVB', label: 'HMVB' },
+    { value: 'ISRO', label: 'ISRO(RAC)' }
+    
   ];
 
   return (
