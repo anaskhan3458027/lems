@@ -63,7 +63,20 @@ export const RegisterProvider = ({ children }: { children: ReactNode }) => {
   const fetchEmployersData = async () => {
     setIsLoadingEmployers(true);
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/django/management/admindata`);
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/django/management/admindata`,
+        {
+          headers: {
+            "ngrok-skip-browser-warning": "true",
+            "Accept": "application/json",
+          },
+        }
+      );
+      const contentType = response.headers.get("content-type");
+
+      if (!contentType?.includes("application/json")) {
+        throw new Error("API did not return JSON");
+      }
       const result = await response.json();
 
       if (result.success && result.data) {
