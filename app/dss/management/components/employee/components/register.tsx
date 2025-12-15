@@ -2,10 +2,20 @@
 "use client";
 
 import { useState, useEffect, ChangeEvent } from 'react';
-import { User, Mail, Lock, Building2, Briefcase, UserCheck, Calendar, Briefcase as BriefcaseIcon } from 'lucide-react';
+import {
+  User,
+  Mail,
+  Lock,
+  Building2,
+  Briefcase,
+  UserCheck,
+  Calendar,
+  Briefcase as BriefcaseIcon,
+} from 'lucide-react';
 import {
   useRegister,
   type RegisterData,
+  type SupervisorOption,
 } from '@/contexts/management/EmployeeContext/RegisterContext';
 
 interface RegisterProps {
@@ -24,7 +34,7 @@ export default function EmployeeRegister({
     departments,
     isLoadingEmployers,
     getProjectsByDepartment,
-    getSupervisorsByProject,
+    getSupervisorsByProjectDetailed,
   } = useRegister();
 
   const [formData, setFormData] = useState<RegisterData>({
@@ -42,7 +52,7 @@ export default function EmployeeRegister({
 
   const [localError, setLocalError] = useState('');
   const [availableProjects, setAvailableProjects] = useState<string[]>([]);
-  const [availableSupervisors, setAvailableSupervisors] = useState<string[]>([]);
+  const [availableSupervisors, setAvailableSupervisors] = useState<SupervisorOption[]>([]);
 
   // Position options array for easy management
   const positionOptions = [
@@ -58,7 +68,7 @@ export default function EmployeeRegister({
     'Senior Project Manager',
     'Senior Project Scientific',
     'Consultant',
-    'Lab Technician'
+    'Lab Technician',
   ];
 
   // Department → projects
@@ -78,25 +88,31 @@ export default function EmployeeRegister({
     }
   }, [formData.department, getProjectsByDepartment]);
 
-  // Project → supervisors
+  // Project → supervisors (name+email)
   useEffect(() => {
     if (formData.projectName && formData.department) {
-      const sups = getSupervisorsByProject(formData.department, formData.projectName);
+      const sups = getSupervisorsByProjectDetailed(
+        formData.department,
+        formData.projectName
+      );
       setAvailableSupervisors(sups);
       setFormData((p) => ({ ...p, supervisor_email: '' }));
     } else {
       setAvailableSupervisors([]);
     }
-  }, [formData.projectName, formData.department, getSupervisorsByProject]);
+  }, [formData.projectName, formData.department, getSupervisorsByProjectDetailed]);
 
   // Auto-select when only ONE supervisor exists
   useEffect(() => {
     if (availableSupervisors.length === 1) {
-      setFormData((p) => ({ ...p, supervisor_email: availableSupervisors[0] }));
+      setFormData((p) => ({
+        ...p,
+        supervisor_email: availableSupervisors[0].email, // store email
+      }));
     } else if (
       availableSupervisors.length > 1 &&
       formData.supervisor_email &&
-      !availableSupervisors.includes(formData.supervisor_email)
+      !availableSupervisors.some((s) => s.email === formData.supervisor_email)
     ) {
       setFormData((p) => ({ ...p, supervisor_email: '' }));
     }
@@ -148,7 +164,8 @@ export default function EmployeeRegister({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <label className="text-sm font-medium text-gray-700">
-                  Username *
+                  {/* this is use name but in frontend it show Name because username and name goes same  */}
+                  Name *
                 </label>
                 <div className="relative">
                   <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -233,10 +250,10 @@ export default function EmployeeRegister({
               </div>
             </div>
 
-            {/* Supervisor Email */}
+            {/* Supervisor Email (shows name, stores email) */}
             <div className="space-y-2">
               <label className="text-sm font-medium text-gray-700 flex items-center justify-between">
-                <span>Supervisor Email *</span>
+                <span>Supervisor *</span>
                 {isSingleSupervisor && (
                   <span className="text-xs font-medium text-green-600 bg-green-50 px-2 py-1 rounded-full">
                     Auto-selected
@@ -247,7 +264,7 @@ export default function EmployeeRegister({
                 <UserCheck className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none z-10" />
                 <select
                   name="supervisor_email"
-                  value={formData.supervisor_email}
+                  value={formData.supervisor_email} // email in state
                   onChange={handleInputChange}
                   className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent transition appearance-none bg-white disabled:bg-gray-100"
                   disabled={
@@ -260,12 +277,12 @@ export default function EmployeeRegister({
                     {availableSupervisors.length === 0
                       ? 'No supervisors'
                       : isSingleSupervisor
-                      ? `Auto-selected: ${availableSupervisors[0]}`
-                      : 'Select Supervisor Email'}
+                      ? `Auto-selected: ${availableSupervisors[0].name}`
+                      : 'Select Supervisor'}
                   </option>
-                  {availableSupervisors.map((email) => (
+                  {availableSupervisors.map(({ email, name }) => (
                     <option key={email} value={email}>
-                      {email}
+                      {name}
                     </option>
                   ))}
                 </select>

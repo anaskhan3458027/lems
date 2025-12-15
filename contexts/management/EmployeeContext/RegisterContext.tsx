@@ -27,6 +27,11 @@ export interface EmployerData {
   is_active: boolean;
 }
 
+export interface SupervisorOption {
+  name: string;
+  email: string;
+}
+
 interface RegisterContextType {
   register: (data: RegisterData) => Promise<{ success: boolean; userData?: any }>;
   isLoading: boolean;
@@ -37,6 +42,10 @@ interface RegisterContextType {
   departments: string[];
   getProjectsByDepartment: (department: string) => string[];
   getSupervisorsByProject: (department: string, project: string) => string[];
+  getSupervisorsByProjectDetailed: (
+    department: string,
+    project: string
+  ) => SupervisorOption[];
 }
 
 const RegisterContext = createContext<RegisterContextType | undefined>(undefined);
@@ -63,12 +72,16 @@ export const RegisterProvider = ({ children }: { children: ReactNode }) => {
   const fetchEmployersData = async () => {
     setIsLoadingEmployers(true);
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/django/management/admindata`);
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/django/management/admindata`
+      );
       const result = await response.json();
 
       if (result.success && result.data) {
         setEmployersData(result.data);
-        const uniqueDepartments = [...new Set(result.data.map((emp: EmployerData) => emp.department))] as string[];
+        const uniqueDepartments = [
+          ...new Set(result.data.map((emp: EmployerData) => emp.department)),
+        ] as string[];
         setDepartments(uniqueDepartments);
       } else {
         setError('Failed to load departments data');
@@ -81,15 +94,32 @@ export const RegisterProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const getProjectsByDepartment = (department: string): string[] => {
-    const departmentEmployers = employersData.filter(emp => emp.department === department);
-    return [...new Set(departmentEmployers.flatMap(emp => emp.projects))];
+    const departmentEmployers = employersData.filter(
+      (emp) => emp.department === department
+    );
+    return [...new Set(departmentEmployers.flatMap((emp) => emp.projects))];
   };
 
+  // old simple version (still kept, if you use it elsewhere)
   const getSupervisorsByProject = (department: string, project: string): string[] => {
     const projectSupervisors = employersData.filter(
-      emp => emp.department === department && emp.projects.includes(project)
+      (emp) => emp.department === department && emp.projects.includes(project)
     );
-    return projectSupervisors.map(emp => emp.email);
+    return projectSupervisors.map((emp) => emp.email);
+  };
+
+  // ✅ new detailed version: name for UI, email for value
+  const getSupervisorsByProjectDetailed = (
+    department: string,
+    project: string
+  ): SupervisorOption[] => {
+    const projectSupervisors = employersData.filter(
+      (emp) => emp.department === department && emp.projects.includes(project)
+    );
+    return projectSupervisors.map((emp) => ({
+      name: emp.name,
+      email: emp.email,
+    }));
   };
 
   const validateForm = (data: RegisterData): string | null => {
@@ -100,8 +130,8 @@ export const RegisterProvider = ({ children }: { children: ReactNode }) => {
       !data.department ||
       !data.supervisor_email ||
       !data.projectName ||
-      !data.joining_date ||    // ✅ NEW VALIDATION
-      !data.position           // ✅ NEW VALIDATION
+      !data.joining_date || // ✅ NEW VALIDATION
+      !data.position // ✅ NEW VALIDATION
     ) {
       return 'Please fill in all required fields';
     }
@@ -151,17 +181,20 @@ export const RegisterProvider = ({ children }: { children: ReactNode }) => {
         password: data.password,
         department: data.department,
         project_name: data.projectName,
-        supervisor_email: data.supervisor_email,
-        joining_date: data.joining_date,        // ✅ NEW FIELD
-        position: data.position,                // ✅ NEW FIELD
-        ...(data.resign_date && { resign_date: data.resign_date })  // ✅ Optional field
+        supervisor_email: data.supervisor_email, // still email
+        joining_date: data.joining_date, // ✅ NEW FIELD
+        position: data.position, // ✅ NEW FIELD
+        ...(data.resign_date && { resign_date: data.resign_date }), // ✅ Optional field
       };
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/django/management/register/employee`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/django/management/register/employee`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        }
+      );
 
       const result = await response.json();
 
@@ -191,7 +224,8 @@ export const RegisterProvider = ({ children }: { children: ReactNode }) => {
         isLoadingEmployers,
         departments,
         getProjectsByDepartment,
-        getSupervisorsByProject
+        getSupervisorsByProject,
+        getSupervisorsByProjectDetailed,
       }}
     >
       {children}
