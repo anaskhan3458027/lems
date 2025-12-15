@@ -41,7 +41,7 @@ export default function Header() {
                   src="/Images/header/left2_IIt_logo.png"
                   alt="IIT BHU"
                   title="IIT BHU"
-                  className="w-14 lg:w-16 h-auto"
+                  className="w-34 lg:w-36 h-auto"
                 />
               </Link>
               <Link
@@ -52,7 +52,7 @@ export default function Header() {
                   src="/Images/header/right1_slcr.png"
                   alt="Smart Laboratory on Clean River"
                   title="Smart Laboratory on Clean River"
-                  className="w-14 lg:w-16 h-auto"
+                  className="w-36 lg:w-36 h-auto"
                 />
               </Link>
             </div>
