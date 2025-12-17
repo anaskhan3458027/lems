@@ -18,32 +18,7 @@ export default function Footer() {
 
   return (
     <footer className="w-full mt-auto">
-      {/* Partner Logos */}
-      <div className="bg-gray-100 py-3 sm:py-5 lg:py-6">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-wrap justify-center md:justify-between items-center gap-3">
-            {partnerLogos.map((logo, index) => (
-              <a
-                key={index}
-                href={logo.link}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="relative w-16 h-10 sm:w-20 sm:h-12 md:w-24 md:h-14 lg:w-28 lg:h-16 xl:w-32 xl:h-18 hover:opacity-80 hover:-translate-y-0.5 transition-all duration-200"
-              >
-                <Image
-                  src={logo.src}
-                  alt={logo.alt}
-                  fill
-                  sizes="(max-width: 640px) 64px, (max-width: 768px) 80px, (max-width: 1024px) 96px, (max-width: 1280px) 112px, 128px"
-                  style={{ objectFit: 'contain', padding: '4px' }}
-                  unoptimized={logo.unoptimized || false}
-                  className="rounded-md"
-                />
-              </a>
-            ))}
-          </div>
-        </div>
-      </div>
+  
 
       {/* Main Footer */}
       <div className="bg-[#000066] text-white">
