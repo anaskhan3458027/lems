@@ -1,11 +1,12 @@
 // app/leave/management/components/layout/Footer.tsx
 'use client';
+
 import Image from 'next/image';
 import React from 'react';
 
 export default function Footer() {
   const partnerLogos = [
-    { src: "/Images/footer/logo2.svg", alt: "Jal shakti", link: "https://www.jalshakti-dowr.gov.in/" },
+    { src: "/Images/footer/logo2.svg", alt: "Jal Shakti", link: "https://www.jalshakti-dowr.gov.in/" },
     { src: "/Images/footer/logo1.png", alt: "Denmark", link: "https://um.dk/en" },
     { src: "/Images/footer/logo3.gif", alt: "Company Seal", unoptimized: true, link: "https://nmcg.nic.in/" },
     { src: "/Images/footer/iitbhu.png", alt: "IIT BHU", link: "https://iitbhu.ac.in/" },
@@ -17,10 +18,9 @@ export default function Footer() {
 
   return (
     <footer className="w-full mt-auto">
-      {/* Partner logos section */}
-      <div className="bg-gray-100 text-gray-800 py-3 sm:py-5 lg:py-6">
+      {/* Partner Logos */}
+      <div className="bg-gray-100 py-3 sm:py-5 lg:py-6">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          
           <div className="flex flex-wrap justify-center md:justify-between items-center gap-3">
             {partnerLogos.map((logo, index) => (
               <a
@@ -45,11 +45,10 @@ export default function Footer() {
         </div>
       </div>
 
-      {/* Main interactive footer */}
+      {/* Main Footer */}
       <div className="bg-[#000066] text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
-            {/* App info */}
             <div>
               <h3 className="text-base sm:text-lg font-semibold mb-2">
                 Leave Management System
@@ -59,101 +58,73 @@ export default function Footer() {
               </p>
             </div>
 
-            {/* Quick links */}
             <div>
-              <h4 className="text-sm sm:text-base font-semibold mb-2">
-                Quick Links
-              </h4>
+              <h4 className="text-sm sm:text-base font-semibold mb-2">Quick Links</h4>
               <ul className="space-y-1 text-xs sm:text-sm text-white/70">
-                <li>
-                  <a href="#apply-leave" className="hover:text-white hover:underline">
-                    Apply for Leave
-                  </a>
-                </li>
-                <li>
-                  <a href="#my-requests" className="hover:text-white hover:underline">
-                    My Leave Requests
-                  </a>
-                </li>
-                <li>
-                  <a href="#team-calendar" className="hover:text-white hover:underline">
-                    Team Leave Calendar
-                  </a>
-                </li>
-                <li>
-                  <a href="#reports" className="hover:text-white hover:underline">
-                    Reports & Analytics
-                  </a>
-                </li>
+                <li><a href="#apply-leave" className="hover:text-white hover:underline">Apply for Leave</a></li>
+                <li><a href="#my-requests" className="hover:text-white hover:underline">My Leave Requests</a></li>
+                <li><a href="#team-calendar" className="hover:text-white hover:underline">Team Leave Calendar</a></li>
+                <li><a href="#reports" className="hover:text-white hover:underline">Reports & Analytics</a></li>
               </ul>
             </div>
 
-            {/* Help / Support */}
             <div>
-              <h4 className="text-sm sm:text-base font-semibold mb-2">
-                Help & Support
-              </h4>
+              <h4 className="text-sm sm:text-base font-semibold mb-2">Help & Support</h4>
               <ul className="space-y-1 text-xs sm:text-sm text-white/70">
-                <li>
-                  <a href="#faq" className="hover:text-white hover:underline">
-                    FAQs
-                  </a>
-                </li>
-                <li>
-                  <a href="#guidelines" className="hover:text-white hover:underline">
-                    Leave Policy & Guidelines
-                  </a>
-                </li>
-                <li>
-                  <a href="mailto:support@example.com" className="hover:text-white hover:underline">
-                    Contact Support
-                  </a>
-                </li>
+                <li><a href="#faq" className="hover:text-white hover:underline">FAQs</a></li>
+                <li><a href="#guidelines" className="hover:text-white hover:underline">Leave Policy & Guidelines</a></li>
+                <li><a href="mailto:support@example.com" className="hover:text-white hover:underline">Contact Support</a></li>
               </ul>
             </div>
 
-            {/* Contact / Status */}
             <div>
-              <h4 className="text-sm sm:text-base font-semibold mb-2">
-                System Status
-              </h4>
-              <p className="text-xs sm:text-sm text-white/70 mb-2">
-                All services operational.
-              </p>
-              <button
-                type="button"
-                className="mt-1 inline-flex items-center px-3 py-1.5 rounded-full bg-white text-[#000066] text-xs sm:text-sm font-semibold hover:bg-slate-100 transition-colors"
-              >
+              <h4 className="text-sm sm:text-base font-semibold mb-2">System Status</h4>
+              <p className="text-xs sm:text-sm text-white/70 mb-2">All services operational.</p>
+              <button className="inline-flex items-center px-3 py-1.5 rounded-full bg-white text-[#000066] text-xs sm:text-sm font-semibold hover:bg-slate-100 transition">
                 View Change Log
               </button>
             </div>
           </div>
         </div>
 
-        {/* Bottom bar */}
-        <div className="bg-[#000044]">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="border-t border-white/15 py-3 sm:py-4 flex flex-col sm:flex-row justify-between items-center gap-2">
-              <div className="text-center sm:text-left">
-                <p className="text-xs sm:text-sm font-medium">
-                  © {new Date().getFullYear()} Leave Management System
-                </p>
-                <p className="text-[11px] sm:text-xs text-white/70">
-                  All Rights Reserved.
-                </p>
-              </div>
+        {/* Bottom Bar */}
+        <div className="border-t border-white/15 py-4">
+          <div className="max-w-7xl mx-auto px-4 flex flex-col items-center gap-2">
+            <p className="text-xs sm:text-sm text-white/70 font-medium text-center">
+              © {new Date().getFullYear()} Leave Management System
+            </p>
+            <p className="text-[11px] sm:text-xs text-white/70">All Rights Reserved.</p>
 
-              <div className="flex flex-wrap justify-center sm:justify-end gap-3 text-[11px] sm:text-xs">
-                <a href="#privacy" className="text-white/70 hover:text-white transition-colors">
-                  Privacy Policy
-                </a>
-                <a href="#terms" className="text-white/70 hover:text-white transition-colors">
-                  Terms of Use
-                </a>
-                <a href="#accessibility" className="text-white/70 hover:text-white transition-colors">
-                  Accessibility
-                </a>
-              </div>
+            {/* Developed By */}
+            <div className="mt-1 text-[11px] sm:text-xs text-white/70 text-center">
+  <div>Developed by</div>
+
+  <div className="flex flex-col items-start mt-1">
+    <a
+      href="https://mail.google.com/mail/?view=cm&fs=1&to=anaskhan3458027@gmail.com&su=Project%20Development%20Request&body=Hello,%0A%0AI%20would%20like%20to%20discuss%20a%20project%20development%20requirement.%0APlease%20let%20me%20know%20a%20suitable%20time%20to%20connect.%0A%0AThank%20you."
+      target="_blank"
+      rel="noopener noreferrer"
+      className="text-white hover:underline font-medium"
+    >
+      Anas Khan
+    </a>
+
+    <a
+      href="https://mail.google.com/mail/?view=cm&fs=1&to=muskangupta0831@gmail.com&su=Project%20Development%20Request&body=Hello,%0A%0AI%20would%20like%20to%20discuss%20a%20project%20development%20requirement.%0APlease%20let%20me%20know%20a%20suitable%20time%20to%20connect.%0A%0AThank%20you."
+      target="_blank"
+      rel="noopener noreferrer"
+      className="text-white hover:underline font-medium"
+    >
+      Muskan Gupta
+    </a>
+  </div>
+</div>
+
+
+            <div className="flex gap-4 text-[11px] sm:text-xs mt-2">
+              <a href="#privacy" className="text-white/70 hover:text-white">Privacy Policy</a>
+              <a href="#terms" className="text-white/70 hover:text-white">Terms of Use</a>
+              <a href="#accessibility" className="text-white/70 hover:text-white">Accessibility</a>
             </div>
           </div>
         </div>

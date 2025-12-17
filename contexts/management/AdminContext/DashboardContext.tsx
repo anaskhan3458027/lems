@@ -135,7 +135,7 @@ export const DashboardProvider: React.FC<{ children: ReactNode }> = ({ children 
   const approveLeave = async (leaveId: number, status: 'approved' | 'rejected'): Promise<boolean> => {
     try {
       const response = await apiClient.post(
-        '/django/management/leave-update-status',
+        '/django/management/leave-update-status-web',
         { 
           leave_id: leaveId, 
           approval_status: status,

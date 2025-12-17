@@ -1,24 +1,24 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
-import { 
-  User, 
-  Mail, 
-  UserCheck, 
-  Calendar, 
-  FileText, 
-  CheckCircle, 
+import { useParams, useSearchParams } from "next/navigation";
+import {
+  User,
+  Mail,
+  UserCheck,
+  Calendar,
+  FileText,
+  CheckCircle,
   XCircle,
   Clock,
   Briefcase,
-  CalendarDays
+  CalendarDays,
 } from "lucide-react";
+import { apiClient } from "@/contexts/utils/apiClient";
 
 export default function ApprovePage() {
-  console.log("💡 Component Rendered");
-
   const params = useParams();
+  const searchParams = useSearchParams();
   const rawEmail = params?.email?.toString() || "";
   const encodedEmail = rawEmail;
 
@@ -27,48 +27,83 @@ export default function ApprovePage() {
   const [actionLoading, setActionLoading] = useState(false);
   const [successMsg, setSuccessMsg] = useState<string>("");
 
+  // Short-lived approval token from email link, if present
+  const approvalToken = searchParams?.get("token") || null;
+
   // ---------- FETCH LEAVE DETAILS ----------
   useEffect(() => {
     async function fetchData() {
-      try {
-        const url = `${process.env.NEXT_PUBLIC_API_URL}/django/management/leave-employee-email-get/${encodedEmail}`;
+      if (!encodedEmail) {
+        setLoading(false);
+        return;
+      }
 
-        const res = await fetch(url);
+      try {
+        const url = `/django/management/leave-employee-email-get/${encodedEmail}`;
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}${url}`);
         const json = await res.json();
         setLeaveData(json?.data?.[0] || null);
       } catch (error) {
-        console.log("❌ Fetch Error:", error);
+        console.error("❌ Fetch Error:", error);
       } finally {
         setLoading(false);
       }
     }
 
-    if (encodedEmail) fetchData();
-    else setLoading(false);
+    fetchData();
   }, [encodedEmail]);
 
   // ---------- APPROVE / REJECT API ----------
   const handleAction = async (status: "approved" | "rejected") => {
+    if (!leaveData) return;
+
     setActionLoading(true);
 
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/django/management/leave-update-status`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          leave_id: leaveData.id,
-          approval_status: status,
-        }),
-      });
+      let json;
 
-      const json = await res.json();
+      // Try admin JWT path first
+      try {
+        json = await apiClient.post(
+          "/django/management/leave-update-status",
+          {
+            leave_id: leaveData.id,
+            approval_status: status,
+          },
+          {
+            userType: "admin",
+          }
+        );
+      } catch (e: any) {
+        // Fallback: email approval token path
+        if (approvalToken) {
+          const res = await fetch(
+            `${process.env.NEXT_PUBLIC_API_URL}/django/management/leave-update-status`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                leave_id: leaveData.id,
+                approval_status: status,
+                approval_token: approvalToken,
+              }),
+            }
+          );
+          json = await res.json();
+          if (!res.ok) {
+            throw new Error(json.message || "Failed to update leave");
+          }
+        } else {
+          throw e;
+        }
+      }
+
       console.log("📦 Update JSON:", json);
 
-      if (res.ok) {
-        // 🔥 Set success message
+      if (json.success) {
         setSuccessMsg(`Leave ${status} successfully!`);
-
-        // 🔥 Update UI instantly
         setLeaveData((prev: any) => ({
           ...prev,
           approval_status: status,
@@ -76,9 +111,9 @@ export default function ApprovePage() {
       } else {
         alert(json.message || "Failed to update leave");
       }
-    } catch (error) {
-      console.log("❌ Status Update Error:", error);
-      alert("Error updating leave");
+    } catch (error: any) {
+      console.error("❌ Status Update Error:", error);
+      alert(error.message || "Error updating leave");
     }
 
     setActionLoading(false);
@@ -86,23 +121,23 @@ export default function ApprovePage() {
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
+    return date.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
     });
   };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'approved':
+      case "approved":
         return (
           <div className="inline-flex items-center gap-2 px-4 py-2 bg-green-100 text-green-800 rounded-full border-2 border-green-300">
             <CheckCircle className="w-5 h-5" />
             <span className="font-bold">APPROVED</span>
           </div>
         );
-      case 'rejected':
+      case "rejected":
         return (
           <div className="inline-flex items-center gap-2 px-4 py-2 bg-red-100 text-red-800 rounded-full border-2 border-red-300">
             <XCircle className="w-5 h-5" />
@@ -135,8 +170,12 @@ export default function ApprovePage() {
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 p-4">
         <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md text-center">
           <XCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-gray-800 mb-2">No Leave Data Found</h2>
-          <p className="text-gray-600">The leave request could not be found or has been removed.</p>
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">
+            No Leave Data Found
+          </h2>
+          <p className="text-gray-600">
+            The leave request could not be found or has been removed.
+          </p>
         </div>
       </div>
     );
@@ -145,17 +184,17 @@ export default function ApprovePage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 p-4 md:p-10">
       <div className="max-w-3xl mx-auto">
-        {/* Header Card */}
         <div className="bg-white rounded-2xl shadow-2xl overflow-hidden mb-6">
           <div className="bg-gradient-to-r from-purple-600 to-pink-600 p-6 text-white">
             <h1 className="text-3xl font-bold mb-2 flex items-center gap-3">
               <FileText className="w-8 h-8" />
               Leave Approval Request
             </h1>
-            <p className="text-purple-100">Review and approve/reject the leave request below</p>
+            <p className="text-purple-100">
+              Review and approve/reject the leave request below
+            </p>
           </div>
 
-          {/* Success Message */}
           {successMsg && (
             <div className="mx-6 mt-6 p-4 bg-green-50 text-green-800 border-2 border-green-200 rounded-xl flex items-center gap-3">
               <CheckCircle className="w-6 h-6" />
@@ -163,7 +202,7 @@ export default function ApprovePage() {
             </div>
           )}
 
-          {/* Status Badge */}
+          {/* Status */}
           <div className="p-6 border-b">
             <div className="flex items-center justify-between">
               <span className="text-gray-600 font-medium">Current Status:</span>
@@ -183,31 +222,37 @@ export default function ApprovePage() {
                   <User className="w-3 h-3" />
                   Employee Name
                 </p>
-                <p className="text-lg font-bold text-gray-800">{leaveData.employee_name}</p>
+                <p className="text-lg font-bold text-gray-800">
+                  {leaveData.employee_name}
+                </p>
               </div>
               <div className="bg-white rounded-lg p-4 border border-purple-200">
                 <p className="text-xs text-gray-500 font-medium mb-1 flex items-center gap-1">
                   <Mail className="w-3 h-3" />
                   Email Address
                 </p>
-                <p className="text-sm font-semibold text-gray-800 break-all">{leaveData.employee_email}</p>
+                <p className="text-sm font-semibold text-gray-800 break-all">
+                  {leaveData.employee_email}
+                </p>
               </div>
-              {/* ✅ NEW: Position */}
               <div className="bg-white rounded-lg p-4 border border-blue-200">
                 <p className="text-xs text-gray-500 font-medium mb-1 flex items-center gap-1">
                   <Briefcase className="w-3 h-3" />
                   Position
                 </p>
-                <p className="text-lg font-bold text-blue-800">{leaveData.position || 'N/A'}</p>
+                <p className="text-lg font-bold text-blue-800">
+                  {leaveData.position || "N/A"}
+                </p>
               </div>
-              {/* ✅ NEW: Joining Date */}
               <div className="bg-white rounded-lg p-4 border border-blue-200">
                 <p className="text-xs text-gray-500 font-medium mb-1 flex items-center gap-1">
                   <CalendarDays className="w-3 h-3" />
                   Joining Date
                 </p>
                 <p className="text-lg font-bold text-blue-800">
-                  {leaveData.joining_date ? formatDate(leaveData.joining_date) : 'N/A'}
+                  {leaveData.joining_date
+                    ? formatDate(leaveData.joining_date)
+                    : "N/A"}
                 </p>
               </div>
               <div className="bg-white rounded-lg p-4 border border-purple-200 md:col-span-2">
@@ -215,7 +260,9 @@ export default function ApprovePage() {
                   <UserCheck className="w-3 h-3" />
                   Supervisor Email
                 </p>
-                <p className="text-sm font-semibold text-gray-800 break-all">{leaveData.supervisor_email}</p>
+                <p className="text-sm font-semibold text-gray-800 break-all">
+                  {leaveData.supervisor_email}
+                </p>
               </div>
             </div>
           </div>
@@ -228,35 +275,53 @@ export default function ApprovePage() {
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
               <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-lg p-4 border border-purple-200">
-                <p className="text-xs text-gray-600 font-medium mb-1">From Date</p>
-                <p className="text-lg font-bold text-purple-800">{formatDate(leaveData.from_date)}</p>
+                <p className="text-xs text-gray-600 font-medium mb-1">
+                  From Date
+                </p>
+                <p className="text-lg font-bold text-purple-800">
+                  {formatDate(leaveData.from_date)}
+                </p>
               </div>
               <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-lg p-4 border border-purple-200">
-                <p className="text-xs text-gray-600 font-medium mb-1">To Date</p>
-                <p className="text-lg font-bold text-purple-800">{formatDate(leaveData.to_date)}</p>
+                <p className="text-xs text-gray-600 font-medium mb-1">
+                  To Date
+                </p>
+                <p className="text-lg font-bold text-purple-800">
+                  {formatDate(leaveData.to_date)}
+                </p>
               </div>
               <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-lg p-4 border border-purple-200">
-                <p className="text-xs text-gray-600 font-medium mb-1">Total Days</p>
-                <p className="text-lg font-bold text-purple-800">{leaveData.total_days} days</p>
+                <p className="text-xs text-gray-600 font-medium mb-1">
+                  Total Days
+                </p>
+                <p className="text-lg font-bold text-purple-800">
+                  {leaveData.total_days} days
+                </p>
               </div>
             </div>
             <div className="bg-gray-50 rounded-lg p-4 border border-gray-200 mb-4">
               <p className="text-xs text-gray-600 font-medium mb-2">Leave Type</p>
-              <p className="text-lg font-bold text-gray-800">{leaveData.leave_type}</p>
+              <p className="text-lg font-bold text-gray-800">
+                {leaveData.leave_type}
+              </p>
             </div>
             <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
               <p className="text-xs text-gray-600 font-medium mb-2 flex items-center gap-1">
                 <FileText className="w-3 h-3" />
                 Reason for Leave
               </p>
-              <p className="text-gray-800 leading-relaxed">{leaveData.reason}</p>
+              <p className="text-gray-800 leading-relaxed">
+                {leaveData.reason}
+              </p>
             </div>
           </div>
 
           {/* Action Buttons */}
           {leaveData.approval_status === "pending" && !successMsg && (
             <div className="p-6 bg-gray-50">
-              <h3 className="text-lg font-bold text-gray-800 mb-4">Take Action</h3>
+              <h3 className="text-lg font-bold text-gray-800 mb-4">
+                Take Action
+              </h3>
               <div className="flex flex-col sm:flex-row gap-4">
                 <button
                   disabled={actionLoading}
@@ -279,7 +344,7 @@ export default function ApprovePage() {
             </div>
           )}
 
-          {/* Already Actioned Message */}
+          {/* Already Actioned */}
           {(leaveData.approval_status !== "pending" || successMsg) && (
             <div className="p-6 bg-gray-50 text-center">
               <p className="text-gray-600 font-medium">
@@ -289,7 +354,6 @@ export default function ApprovePage() {
           )}
         </div>
 
-        {/* Footer Info */}
         <div className="text-center text-gray-500 text-sm">
           <p>Leave Management System • Automated Approval</p>
         </div>
