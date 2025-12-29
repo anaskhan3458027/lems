@@ -65,7 +65,7 @@ const calculateLeaveBalance = (user: User, leaves: Leave[]) => {
     (leave) => leave.approval_status === 'pending'
   );
 
-  // EL Calculation (Month-based, 2.5/month)
+  // EL Calculation - Starts after 1 month of joining (2.5/month)
   let elBalance = 0;
   const elHistory: Array<{
     month: string;
@@ -73,6 +73,9 @@ const calculateLeaveBalance = (user: User, leaves: Leave[]) => {
     used: number;
     balance: number;
   }> = [];
+
+  // EL starts from the 2nd month onwards
+  const elStartMonth = 1; // Start crediting from month 2 (index 1)
 
   for (let i = 0; i < monthsSinceJoining; i++) {
     const monthDate = new Date(joiningYear, joiningMonth + i, 1);
@@ -90,7 +93,10 @@ const calculateLeaveBalance = (user: User, leaves: Leave[]) => {
       59
     );
 
-    elBalance += elPerMonth;
+    // Credit EL only after first month
+    if (i >= elStartMonth) {
+      elBalance += elPerMonth;
+    }
 
     const elUsedThisMonth = approvedLeaves
       .filter((leave) => {
@@ -107,13 +113,13 @@ const calculateLeaveBalance = (user: User, leaves: Leave[]) => {
         year: 'numeric',
         month: 'short',
       }),
-      credit: elPerMonth,
+      credit: i >= elStartMonth ? elPerMonth : 0,
       used: elUsedThisMonth,
       balance: elBalance,
     });
   }
 
-  const totalELAccumulated = monthsSinceJoining * elPerMonth;
+  const totalELAccumulated = Math.max(0, monthsSinceJoining - elStartMonth) * elPerMonth;
   const usedEL = approvedLeaves
     .filter((leave) => leave.leave_type === 'EL' || leave.leave_type === 'el')
     .reduce((sum, leave) => sum + (leave.total_days || 0), 0);
@@ -123,7 +129,7 @@ const calculateLeaveBalance = (user: User, leaves: Leave[]) => {
     .filter((leave) => leave.leave_type === 'EL' || leave.leave_type === 'el')
     .reduce((sum, leave) => sum + (leave.total_days || 0), 0);
 
-  // CL Calculation (Year-based, 8/year) - Only deduct when approved
+  // CL Calculation - 8 days per year from joining date
   const usedCLThisYear = approvedLeaves
     .filter((leave) => {
       if (leave.leave_type !== 'CL' && leave.leave_type !== 'cl') return false;
@@ -136,6 +142,28 @@ const calculateLeaveBalance = (user: User, leaves: Leave[]) => {
 
   const pendingCL = pendingLeaves
     .filter((leave) => leave.leave_type === 'CL' || leave.leave_type === 'cl')
+    .reduce((sum, leave) => sum + (leave.total_days || 0), 0);
+
+  // HalfDay Calculation - Starts at 0, deducts 0.5 for each half day
+  const usedHalfDay = approvedLeaves
+    .filter((leave) => leave.leave_type === 'HalfDay' || leave.leave_type === 'halfday')
+    .reduce((sum, leave) => sum + (leave.total_days || 0) * 0.5, 0);
+
+  const remainingHalfDay = -usedHalfDay; // Always negative or 0
+
+  const pendingHalfDay = pendingLeaves
+    .filter((leave) => leave.leave_type === 'HalfDay' || leave.leave_type === 'halfday')
+    .reduce((sum, leave) => sum + (leave.total_days || 0) * 0.5, 0);
+
+  // LWP Calculation - Starts at 0, deducts 1 for each day
+  const usedLWP = approvedLeaves
+    .filter((leave) => leave.leave_type === 'LWP' || leave.leave_type === 'lwp')
+    .reduce((sum, leave) => sum + (leave.total_days || 0), 0);
+
+  const remainingLWP = -usedLWP; // Always negative or 0
+
+  const pendingLWP = pendingLeaves
+    .filter((leave) => leave.leave_type === 'LWP' || leave.leave_type === 'lwp')
     .reduce((sum, leave) => sum + (leave.total_days || 0), 0);
 
   return {
@@ -154,6 +182,16 @@ const calculateLeaveBalance = (user: User, leaves: Leave[]) => {
       pending: pendingCL,
       yearStart: currentLeaveYearStart,
       yearEnd: nextLeaveYearStart,
+    },
+    halfDay: {
+      used: usedHalfDay,
+      remaining: remainingHalfDay,
+      pending: pendingHalfDay,
+    },
+    lwp: {
+      used: usedLWP,
+      remaining: remainingLWP,
+      pending: pendingLWP,
     },
     monthsSinceJoining,
     yearsSinceJoining,
@@ -219,42 +257,9 @@ export default function LeaveBalanceCalculator({
                 <th className="px-6 py-4 text-center font-semibold">Used (Approved)</th>
                 <th className="px-6 py-4 text-center font-semibold">Pending</th>
                 <th className="px-6 py-4 text-center font-semibold">Available</th>
-                
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {/* Earned Leave Row */}
-              <tr className="hover:bg-green-50 transition-colors">
-                <td className="px-6 py-4">
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                    <div>
-                      <p className="font-semibold text-gray-900">Earned Leave (EL)</p>
-                      <p className="text-xs text-gray-500">{leaveBalance.el.perMonth} days/month</p>
-                    </div>
-                  </div>
-                </td>
-                <td className="px-6 py-4 text-center">
-                  <p className="text-lg font-bold text-green-600">{leaveBalance.el.accumulated.toFixed(1)}</p>
-                  <p className="text-xs text-gray-500">Accumulated</p>
-                </td>
-                <td className="px-6 py-4 text-center">
-                  <p className="text-lg font-bold text-red-600">{leaveBalance.el.used.toFixed(1)}</p>
-                </td>
-                <td className="px-6 py-4 text-center">
-                  <p className="text-lg font-bold text-yellow-600">{leaveBalance.el.pending.toFixed(1)}</p>
-                </td>
-                <td className="px-6 py-4 text-center">
-                  <p className={`text-2xl font-bold ${isNegativeEL ? 'text-red-600' : 'text-green-600'}`}>
-                    {leaveBalance.el.remaining.toFixed(1)}
-                  </p>
-                  {isNegativeEL && (
-                    <p className="text-xs text-red-500 font-semibold mt-1">Deficit</p>
-                  )}
-                </td>
-             
-              </tr>
-
               {/* Casual Leave Row */}
               <tr className="hover:bg-blue-50 transition-colors">
                 <td className="px-6 py-4">
@@ -279,15 +284,128 @@ export default function LeaveBalanceCalculator({
                 <td className="px-6 py-4 text-center">
                   <p className="text-2xl font-bold text-blue-600">{leaveBalance.cl.remaining.toFixed(1)}</p>
                 </td>
-               
+              </tr>
+
+              {/* Earned Leave Row */}
+              <tr className="hover:bg-green-50 transition-colors">
+                <td className="px-6 py-4">
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                    <div>
+                      <p className="font-semibold text-gray-900">Earned Leave (EL)</p>
+                      <p className="text-xs text-gray-500">{leaveBalance.el.perMonth} days/month (after 1 month)</p>
+                    </div>
+                  </div>
+                </td>
+                <td className="px-6 py-4 text-center">
+                  <p className="text-lg font-bold text-green-600">{leaveBalance.el.accumulated.toFixed(1)}</p>
+                  <p className="text-xs text-gray-500">Accumulated</p>
+                </td>
+                <td className="px-6 py-4 text-center">
+                  <p className="text-lg font-bold text-red-600">{leaveBalance.el.used.toFixed(1)}</p>
+                </td>
+                <td className="px-6 py-4 text-center">
+                  <p className="text-lg font-bold text-yellow-600">{leaveBalance.el.pending.toFixed(1)}</p>
+                </td>
+                <td className="px-6 py-4 text-center">
+                  <p className={`text-2xl font-bold ${isNegativeEL ? 'text-red-600' : 'text-green-600'}`}>
+                    {leaveBalance.el.remaining.toFixed(1)}
+                  </p>
+                  {isNegativeEL && (
+                    <p className="text-xs text-red-500 font-semibold mt-1">Deficit</p>
+                  )}
+                </td>
+              </tr>
+
+              {/* Half Day Row */}
+              <tr className="hover:bg-orange-50 transition-colors">
+                <td className="px-6 py-4">
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
+                    <div>
+                      <p className="font-semibold text-gray-900">Half Day</p>
+                      <p className="text-xs text-gray-500">0.5 day per half day taken</p>
+                    </div>
+                  </div>
+                </td>
+                <td className="px-6 py-4 text-center">
+                  <p className="text-lg font-bold text-gray-600">0</p>
+                  <p className="text-xs text-gray-500">No allocation</p>
+                </td>
+                <td className="px-6 py-4 text-center">
+                  <p className="text-lg font-bold text-red-600">{leaveBalance.halfDay.used.toFixed(1)}</p>
+                </td>
+                <td className="px-6 py-4 text-center">
+                  <p className="text-lg font-bold text-yellow-600">{leaveBalance.halfDay.pending.toFixed(1)}</p>
+                </td>
+                <td className="px-6 py-4 text-center">
+                  <p className="text-2xl font-bold text-orange-600">
+                    {leaveBalance.halfDay.remaining.toFixed(1)}
+                  </p>
+                  {leaveBalance.halfDay.remaining < 0 && (
+                    <p className="text-xs text-orange-500 font-semibold mt-1">Deducted</p>
+                  )}
+                </td>
+              </tr>
+
+              {/* Leave Without Pay Row */}
+              <tr className="hover:bg-red-50 transition-colors">
+                <td className="px-6 py-4">
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                    <div>
+                      <p className="font-semibold text-gray-900">Leave Without Pay (LWP)</p>
+                      <p className="text-xs text-gray-500">1 day deducted per day taken</p>
+                    </div>
+                  </div>
+                </td>
+                <td className="px-6 py-4 text-center">
+                  <p className="text-lg font-bold text-gray-600">0</p>
+                  <p className="text-xs text-gray-500">No allocation</p>
+                </td>
+                <td className="px-6 py-4 text-center">
+                  <p className="text-lg font-bold text-red-600">{leaveBalance.lwp.used.toFixed(1)}</p>
+                </td>
+                <td className="px-6 py-4 text-center">
+                  <p className="text-lg font-bold text-yellow-600">{leaveBalance.lwp.pending.toFixed(1)}</p>
+                </td>
+                <td className="px-6 py-4 text-center">
+                  <p className="text-2xl font-bold text-red-600">
+                    {leaveBalance.lwp.remaining.toFixed(1)}
+                  </p>
+                  {leaveBalance.lwp.remaining < 0 && (
+                    <p className="text-xs text-red-500 font-semibold mt-1">Deducted</p>
+                  )}
+                </td>
               </tr>
             </tbody>
           </table>
         </div>
       </div>
 
-     
-
+      {/* Information Notes */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <p className="text-sm text-blue-800">
+            <strong>📅 CL (Casual Leave):</strong> You get 8 days per year from your joining date anniversary. Unused CL does not carry forward to next year.
+          </p>
+        </div>
+        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+          <p className="text-sm text-green-800">
+            <strong>💰 EL (Earned Leave):</strong> You earn 2.5 days per month starting from your 2nd month. EL accumulates and carries forward indefinitely.
+          </p>
+        </div>
+        <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+          <p className="text-sm text-orange-800">
+            <strong>🕐 Half Day:</strong> No allocated balance. Each half day taken deducts 0.5 days. Balance shows total deductions.
+          </p>
+        </div>
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <p className="text-sm text-red-800">
+            <strong>💸 LWP (Leave Without Pay):</strong> No allocated balance. Each day taken deducts 1 day from your salary. Balance shows total deductions.
+          </p>
+        </div>
+      </div>
 
       {isNegativeEL && (
         <div className="bg-red-50 border border-red-200 rounded-lg p-4">

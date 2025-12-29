@@ -213,10 +213,10 @@ export default function LeaveRequestForm({ onClose }: LeaveRequestFormProps) {
               onChange={(e) => setLeaveType(e.target.value)}
             >
               <option value="">Select Leave Type</option>
-              <option value="CL">Casual Leave</option>
-              <option value="EL">Earned Leave</option>
-              <option value="EL">HalfDay</option>
-              <option value="EL">Leave Without Pay</option>
+              <option value="CL">Casual Leave (CL)</option>
+              <option value="EL">Earned Leave (EL)</option>
+              <option value="HalfDay">Half Day</option>
+              <option value="LWP">Leave Without Pay (LWP)</option>
             </select>
           </div>
 

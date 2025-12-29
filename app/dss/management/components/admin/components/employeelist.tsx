@@ -13,6 +13,7 @@ import {
   CalendarDays,
   UserCheck,
   ChevronUp,
+  FileText,
 } from 'lucide-react';
 import { useDashboard } from '@/contexts/management/AdminContext/DashboardContext';
 
@@ -118,18 +119,12 @@ export default function EmployeeList() {
               <table className="w-full text-sm">
                 <thead className="bg-blue-600 text-white">
                   <tr>
-                    <th className="px-3 py-3 text-left font-semibold">Employee</th>
-                    <th className="px-3 py-3 text-left font-semibold">Position</th>
-                    <th className="px-3 py-3 text-left font-semibold">Department</th>
-                    <th className="px-3 py-3 text-center font-semibold">EL Accumulated</th>
-                    <th className="px-3 py-3 text-center font-semibold">EL Used</th>
-                    <th className="px-3 py-3 text-center font-semibold">EL Pending</th>
-                    <th className="px-3 py-3 text-center font-semibold">EL Remaining</th>
-                    <th className="px-3 py-3 text-center font-semibold">CL Allocated</th>
-                    <th className="px-3 py-3 text-center font-semibold">CL Used</th>
-                    <th className="px-3 py-3 text-center font-semibold">CL Pending</th>
-                    <th className="px-3 py-3 text-center font-semibold">CL Remaining</th>
-                    <th className="px-3 py-3 text-center font-semibold">Action</th>
+                    <th className="px-4 py-3 text-left font-semibold">Employee</th>
+                    <th className="px-4 py-3 text-left font-semibold">Position</th>
+                    <th className="px-4 py-3 text-left font-semibold">Department</th>
+                    <th className="px-4 py-3 text-left font-semibold">Email</th>
+                    <th className="px-4 py-3 text-center font-semibold">Joining Date</th>
+                    <th className="px-4 py-3 text-center font-semibold">Action</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
@@ -137,144 +132,214 @@ export default function EmployeeList() {
                     const leaves = employeeLeaves[emp.email] || [];
                     const balance = calculateLeaveBalance(emp, leaves);
                     const isExpanded = expandedEmployee === emp.email;
+                    
+                    // Check if there are any pending leave requests
+                    const hasPendingLeaves = leaves.some(leave => leave.approval_status === 'pending');
+                    const pendingCount = leaves.filter(leave => leave.approval_status === 'pending').length;
 
                     return (
                       <React.Fragment key={emp.id}>
                         {/* Employee Row */}
                         <tr className={`hover:bg-gray-50 ${isExpanded ? 'bg-blue-50' : ''}`}>
-                          <td className="px-3 py-3">
-                            <div className="flex items-center gap-2">
-                              <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold text-xs flex-shrink-0">
+                          <td className="px-4 py-3">
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
                                 {emp.name.charAt(0).toUpperCase()}
                               </div>
                               <div className="min-w-0">
-                                <p className="font-medium text-gray-900 truncate">{emp.name}</p>
-                                <p className="text-xs text-gray-500 truncate">{emp.email}</p>
+                                <p className="font-semibold text-gray-900 truncate">{emp.name}</p>
                               </div>
                             </div>
                           </td>
-                          <td className="px-3 py-3">
-                            <div className="flex items-center gap-1">
-                              <Briefcase className="w-3 h-3 text-blue-600 flex-shrink-0" />
+                          <td className="px-4 py-3">
+                            <div className="flex items-center gap-2">
+                              <Briefcase className="w-4 h-4 text-blue-600 flex-shrink-0" />
                               <span className="text-gray-700 truncate">{emp.position || 'N/A'}</span>
                             </div>
                           </td>
-                          <td className="px-3 py-3">
-                            <div className="flex items-center gap-1">
-                              <Building2 className="w-3 h-3 text-gray-500 flex-shrink-0" />
+                          <td className="px-4 py-3">
+                            <div className="flex items-center gap-2">
+                              <Building2 className="w-4 h-4 text-gray-500 flex-shrink-0" />
                               <span className="text-gray-700 truncate capitalize">{emp.department}</span>
                             </div>
                           </td>
-                          {balance ? (
-                            <>
-                              <td className="px-3 py-3 text-center font-medium text-blue-600">{balance.el.accumulated.toFixed(1)}</td>
-                              <td className="px-3 py-3 text-center text-red-600 font-medium">{balance.el.used.toFixed(1)}</td>
-                              <td className="px-3 py-3 text-center text-yellow-600 font-medium">{balance.el.pending.toFixed(1)}</td>
-                              <td className={`px-3 py-3 text-center font-bold ${balance.el.remaining < 0 ? 'text-red-600' : 'text-green-600'}`}>
-                                {balance.el.remaining.toFixed(1)}
-                              </td>
-                              <td className="px-3 py-3 text-center font-medium text-blue-600">{balance.cl.perYear}</td>
-                              <td className="px-3 py-3 text-center text-red-600 font-medium">{balance.cl.used.toFixed(1)}</td>
-                              <td className="px-3 py-3 text-center text-yellow-600 font-medium">{balance.cl.pending.toFixed(1)}</td>
-                              <td className="px-3 py-3 text-center text-green-600 font-bold">{balance.cl.remaining.toFixed(1)}</td>
-                            </>
-                          ) : (
-                            <td colSpan={8} className="px-3 py-3 text-center text-gray-400 text-xs">No joining date</td>
-                          )}
-                          <td className="px-3 py-3 text-center">
+                          <td className="px-4 py-3">
+                            <div className="flex items-center gap-2">
+                              <Mail className="w-4 h-4 text-gray-500 flex-shrink-0" />
+                              <span className="text-gray-600 truncate text-xs">{emp.email}</span>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 text-center">
+                            <div className="flex items-center justify-center gap-2">
+                              <CalendarDays className="w-4 h-4 text-gray-500 flex-shrink-0" />
+                              <span className="text-gray-700 text-sm">
+                                {emp.joining_date ? formatDate(emp.joining_date) : 'N/A'}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 text-center">
                             <button
                               onClick={() => toggleEmployeeLeaves(emp.email)}
-                              className={`px-3 py-1 rounded text-xs font-medium inline-flex items-center gap-1 ${
+                              className={`relative px-4 py-2 rounded-lg text-sm font-medium inline-flex items-center gap-2 transition-all ${
                                 isExpanded
-                                  ? 'bg-blue-600 text-white'
+                                  ? 'bg-blue-600 text-white shadow-lg'
                                   : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
                               }`}
                             >
-                              {isExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-                              {isExpanded ? 'Hide' : 'View'}
+                              {hasPendingLeaves && !isExpanded && (
+                                <span className="absolute -top-1 -right-1 flex h-5 w-5">
+                                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                                  <span className="relative inline-flex rounded-full h-5 w-5 bg-red-500 text-white text-xs items-center justify-center font-bold">
+                                    {pendingCount}
+                                  </span>
+                                </span>
+                              )}
+                              {isExpanded ? (
+                                <>
+                                  <ChevronUp className="w-4 h-4" />
+                                  Hide Leaves
+                                </>
+                              ) : (
+                                <>
+                                  <ChevronDown className="w-4 h-4" />
+                                  View Leaves
+                                </>
+                              )}
                             </button>
                           </td>
                         </tr>
 
-                        {/* Expanded Leave Requests Table */}
+                        {/* Expanded Leave Requests Section */}
                         {isExpanded && (
                           <tr>
-                            <td colSpan={12} className="bg-gray-50 p-4">
-                              <div className="mb-3 flex items-center justify-between">
-                                <h4 className="font-bold text-gray-800">
-                                  Leave Requests ({leaves.length})
+                            <td colSpan={6} className="bg-gray-50 p-6">
+                              <div className="mb-4 flex items-center justify-between">
+                                <h4 className="font-bold text-lg text-gray-800 flex items-center gap-2">
+                                  <FileText className="w-5 h-5 text-blue-600" />
+                                  Leave History ({leaves.length} total)
                                 </h4>
                                 {leavesLoading[emp.email] && (
-                                  <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                                  <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
                                 )}
                               </div>
+
+                              {/* Leave Balance Summary */}
+                              {balance && (
+                                <div className="mb-4 grid grid-cols-1 md:grid-cols-4 gap-4">
+                                  {/* CL Card */}
+                                  <div className="bg-white border-2 border-blue-200 rounded-lg p-4">
+                                    <p className="text-xs text-gray-500 font-medium mb-1">Casual Leave (CL)</p>
+                                    <p className="text-2xl font-bold text-blue-600">{balance.cl.remaining.toFixed(1)}</p>
+                                    <p className="text-xs text-gray-500 mt-1">Remaining of {balance.cl.perYear}</p>
+                                  </div>
+                                  
+                                  {/* EL Card */}
+                                  <div className="bg-white border-2 border-green-200 rounded-lg p-4">
+                                    <p className="text-xs text-gray-500 font-medium mb-1">Earned Leave (EL)</p>
+                                    <p className={`text-2xl font-bold ${balance.el.remaining < 0 ? 'text-red-600' : 'text-green-600'}`}>
+                                      {balance.el.remaining.toFixed(1)}
+                                    </p>
+                                    <p className="text-xs text-gray-500 mt-1">Accumulated {balance.el.accumulated.toFixed(1)}</p>
+                                  </div>
+                                  
+                                  {/* HalfDay Card */}
+                                  <div className="bg-white border-2 border-orange-200 rounded-lg p-4">
+                                    <p className="text-xs text-gray-500 font-medium mb-1">Half Day</p>
+                                    <p className="text-2xl font-bold text-orange-600">{balance.halfDay.remaining.toFixed(1)}</p>
+                                    <p className="text-xs text-gray-500 mt-1">Used {balance.halfDay.used.toFixed(1)}</p>
+                                  </div>
+                                  
+                                  {/* LWP Card */}
+                                  <div className="bg-white border-2 border-red-200 rounded-lg p-4">
+                                    <p className="text-xs text-gray-500 font-medium mb-1">Leave Without Pay</p>
+                                    <p className="text-2xl font-bold text-red-600">{balance.lwp.remaining.toFixed(1)}</p>
+                                    <p className="text-xs text-gray-500 mt-1">Used {balance.lwp.used.toFixed(1)}</p>
+                                  </div>
+                                </div>
+                              )}
                               
+                              {/* Leave Requests Table */}
                               {leaves.length === 0 ? (
-                                <p className="text-gray-500 text-sm text-center py-4 bg-white rounded border">No leave requests</p>
+                                <div className="text-center py-8 bg-white rounded-lg border-2 border-gray-200">
+                                  <FileText className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                                  <p className="text-gray-500 font-medium">No leave requests</p>
+                                </div>
                               ) : (
                                 <div className="overflow-x-auto">
-                                  <table className="w-full text-sm border bg-white">
-                                    <thead className="bg-gray-200">
+                                  <table className="w-full text-sm border bg-white rounded-lg overflow-hidden">
+                                    <thead className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white">
                                       <tr>
-                                        <th className="px-3 py-2 text-left font-semibold">Type</th>
-                                        <th className="px-3 py-2 text-left font-semibold">From Date</th>
-                                        <th className="px-3 py-2 text-left font-semibold">To Date</th>
-                                        <th className="px-3 py-2 text-center font-semibold">Days</th>
-                                        <th className="px-3 py-2 text-left font-semibold">Reason</th>
-                                        <th className="px-3 py-2 text-left font-semibold">Supervisor</th>
-                                        <th className="px-3 py-2 text-center font-semibold">Status</th>
-                                        <th className="px-3 py-2 text-left font-semibold">Applied On</th>
-                                        <th className="px-3 py-2 text-center font-semibold">Actions</th>
+                                        <th className="px-4 py-3 text-left font-semibold">Type</th>
+                                        <th className="px-4 py-3 text-left font-semibold">From Date</th>
+                                        <th className="px-4 py-3 text-left font-semibold">To Date</th>
+                                        <th className="px-4 py-3 text-center font-semibold">Days</th>
+                                        <th className="px-4 py-3 text-left font-semibold">Reason</th>
+                                        <th className="px-4 py-3 text-center font-semibold">Status</th>
+                                        <th className="px-4 py-3 text-left font-semibold">Applied On</th>
+                                        <th className="px-4 py-3 text-center font-semibold">Actions</th>
                                       </tr>
                                     </thead>
-                                    <tbody className="divide-y">
+                                    <tbody className="divide-y divide-gray-200">
                                       {leaves.map((leave) => (
-                                        <tr key={leave.id} className="hover:bg-gray-50">
-                                          <td className="px-3 py-2 font-bold text-blue-700">{leave.leave_type}</td>
-                                          <td className="px-3 py-2">{formatDate(leave.from_date)}</td>
-                                          <td className="px-3 py-2">{formatDate(leave.to_date)}</td>
-                                          <td className="px-3 py-2 text-center font-medium">{leave.total_days}</td>
-                                          <td className="px-3 py-2 text-gray-700 max-w-xs truncate">{leave.reason}</td>
-                                          <td className="px-3 py-2 text-xs text-gray-600 truncate max-w-xs">
-                                            {leave.supervisor_email}
+                                        <tr key={leave.id} className="hover:bg-blue-50 transition-colors">
+                                          <td className="px-4 py-3">
+                                            <span className={`font-bold px-3 py-1.5 rounded-full text-xs ${
+                                              leave.leave_type === 'CL' || leave.leave_type === 'cl' 
+                                                ? 'bg-blue-100 text-blue-700 border border-blue-300'
+                                                : leave.leave_type === 'EL' || leave.leave_type === 'el'
+                                                ? 'bg-green-100 text-green-700 border border-green-300'
+                                                : leave.leave_type === 'HalfDay' || leave.leave_type === 'halfday'
+                                                ? 'bg-orange-100 text-orange-700 border border-orange-300'
+                                                : leave.leave_type === 'LWP' || leave.leave_type === 'lwp'
+                                                ? 'bg-red-100 text-red-700 border border-red-300'
+                                                : 'bg-gray-100 text-gray-700 border border-gray-300'
+                                            }`}>
+                                              {leave.leave_type}
+                                            </span>
                                           </td>
-                                          <td className="px-3 py-2 text-center">
-                                            <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                                          <td className="px-4 py-3 font-medium text-gray-700">{formatDate(leave.from_date)}</td>
+                                          <td className="px-4 py-3 font-medium text-gray-700">{formatDate(leave.to_date)}</td>
+                                          <td className="px-4 py-3 text-center">
+                                            <span className="font-bold text-gray-900">{leave.total_days}</span>
+                                          </td>
+                                          <td className="px-4 py-3 text-gray-700 max-w-xs truncate">{leave.reason}</td>
+                                          <td className="px-4 py-3 text-center">
+                                            <span className={`px-3 py-1.5 rounded-full text-xs font-bold ${
                                               leave.approval_status === 'approved'
-                                                ? 'bg-green-100 text-green-700'
+                                                ? 'bg-green-100 text-green-700 border border-green-300'
                                                 : leave.approval_status === 'rejected'
-                                                ? 'bg-red-100 text-red-700'
-                                                : 'bg-yellow-100 text-yellow-700'
+                                                ? 'bg-red-100 text-red-700 border border-red-300'
+                                                : 'bg-yellow-100 text-yellow-700 border border-yellow-300'
                                             }`}>
                                               {leave.approval_status.toUpperCase()}
                                             </span>
                                           </td>
-                                          <td className="px-3 py-2 text-gray-600">{formatDate(leave.created_at)}</td>
-                                          <td className="px-3 py-2">
-                                            <div className="flex gap-1 justify-center">
+                                          <td className="px-4 py-3 text-gray-600 font-medium">{formatDate(leave.created_at)}</td>
+                                          <td className="px-4 py-3">
+                                            <div className="flex gap-2 justify-center">
                                               <button
                                                 onClick={() => handleApprove(leave.id, emp.email, 'approved')}
-                                                className={`p-1 rounded ${
+                                                className={`p-2 rounded-lg transition-all ${
                                                   leave.approval_status === 'approved'
-                                                    ? 'bg-green-300 text-green-800 cursor-not-allowed'
-                                                    : 'bg-green-500 hover:bg-green-600 text-white'
+                                                    ? 'bg-green-200 text-green-800 cursor-not-allowed'
+                                                    : 'bg-green-500 hover:bg-green-600 text-white shadow-md hover:shadow-lg'
                                                 }`}
                                                 disabled={leavesLoading[emp.email] || leave.approval_status === 'approved'}
                                                 title="Approve"
                                               >
-                                                <CheckCircle className="w-4 h-4" />
+                                                <CheckCircle className="w-5 h-5" />
                                               </button>
                                               <button
                                                 onClick={() => handleApprove(leave.id, emp.email, 'rejected')}
-                                                className={`p-1 rounded ${
+                                                className={`p-2 rounded-lg transition-all ${
                                                   leave.approval_status === 'rejected'
-                                                    ? 'bg-red-300 text-red-800 cursor-not-allowed'
-                                                    : 'bg-red-500 hover:bg-red-600 text-white'
+                                                    ? 'bg-red-200 text-red-800 cursor-not-allowed'
+                                                    : 'bg-red-500 hover:bg-red-600 text-white shadow-md hover:shadow-lg'
                                                 }`}
                                                 disabled={leavesLoading[emp.email] || leave.approval_status === 'rejected'}
                                                 title="Reject"
                                               >
-                                                <XCircle className="w-4 h-4" />
+                                                <XCircle className="w-5 h-5" />
                                               </button>
                                             </div>
                                           </td>
