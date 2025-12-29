@@ -52,7 +52,7 @@ export default function EmployeeDashboard() {
 
   const handleRefreshLeaves = async () => {
     if (!user?.email) return;
-    
+
     setIsRefreshing(true);
     try {
       await fetchLeaves();
@@ -79,6 +79,15 @@ export default function EmployeeDashboard() {
       minute: '2-digit',
     });
   };
+  const toCamelCase = (str?: string) => {
+    if (!str) return "N/A";
+    return str
+      .toLowerCase()
+      .split(" ")
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ");
+  };
+
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -143,11 +152,10 @@ export default function EmployeeDashboard() {
             {/* Home Section */}
             <button
               onClick={() => setActiveSection('home')}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all transform hover:scale-[1.02] ${
-                activeSection === 'home'
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all transform hover:scale-[1.02] ${activeSection === 'home'
                   ? 'bg-gradient-to-r from-green-500 to-teal-600 text-white shadow-lg'
                   : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
-              }`}
+                }`}
             >
               <Home className="w-5 h-5 flex-shrink-0" />
               <div className="text-left flex-1 min-w-0">
@@ -165,11 +173,10 @@ export default function EmployeeDashboard() {
                 setShowLeaveForm(true);
               }}
               disabled={!user.supervisor_email}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all transform hover:scale-[1.02] ${
-                activeSection === 'apply-leave'
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all transform hover:scale-[1.02] ${activeSection === 'apply-leave'
                   ? 'bg-gradient-to-r from-purple-500 to-pink-600 text-white shadow-lg'
                   : 'bg-gray-50 text-gray-700 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed'
-              }`}
+                }`}
               title={!user.supervisor_email ? 'No supervisor assigned' : 'Apply for leave'}
             >
               <PlusCircle className="w-5 h-5 flex-shrink-0" />
@@ -184,11 +191,10 @@ export default function EmployeeDashboard() {
             {/* Leave Balance Section */}
             <button
               onClick={() => setActiveSection('leave-balance')}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all transform hover:scale-[1.02] ${
-                activeSection === 'leave-balance'
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all transform hover:scale-[1.02] ${activeSection === 'leave-balance'
                   ? 'bg-gradient-to-r from-indigo-500 to-blue-600 text-white shadow-lg'
                   : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
-              }`}
+                }`}
             >
               <TrendingUp className="w-5 h-5 flex-shrink-0" />
               <div className="text-left flex-1 min-w-0">
@@ -202,11 +208,10 @@ export default function EmployeeDashboard() {
             {/* Leave History Section */}
             <button
               onClick={() => setActiveSection('leave-history')}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all transform hover:scale-[1.02] ${
-                activeSection === 'leave-history'
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all transform hover:scale-[1.02] ${activeSection === 'leave-history'
                   ? 'bg-gradient-to-r from-violet-500 to-purple-600 text-white shadow-lg'
                   : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
-              }`}
+                }`}
             >
               <History className="w-5 h-5 flex-shrink-0" />
               <div className="text-left flex-1 min-w-0">
@@ -398,15 +403,16 @@ export default function EmployeeDashboard() {
                     <div className="p-4 bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg border border-gray-200">
                       <p className="text-sm text-gray-500 font-medium mb-1">Full Name</p>
                       <p className="text-lg font-semibold text-gray-800">
-                        {user.name || user.username || 'N/A'}
+                        {toCamelCase(user.name || user.username)}
                       </p>
                     </div>
-                    <div className="p-4 bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg border border-gray-200">
+
+                    {/* <div className="p-4 bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg border border-gray-200">
                       <p className="text-sm text-gray-500 font-medium mb-1">Username</p>
                       <p className="text-lg font-semibold text-gray-800">
                         {user.username || 'N/A'}
                       </p>
-                    </div>
+                    </div> */}
                     <div className="p-4 bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg border border-gray-200">
                       <p className="text-sm text-gray-500 font-medium mb-1">Email Address</p>
                       <p className="text-lg font-semibold text-gray-800 break-all">
@@ -455,14 +461,12 @@ export default function EmployeeDashboard() {
                       <p className="text-sm text-gray-500 font-medium mb-1">Account Status</p>
                       <div className="flex items-center gap-2">
                         <div
-                          className={`w-3 h-3 rounded-full ${
-                            user.is_active ? 'bg-green-500 animate-pulse' : 'bg-red-500'
-                          }`}
+                          className={`w-3 h-3 rounded-full ${user.is_active ? 'bg-green-500 animate-pulse' : 'bg-red-500'
+                            }`}
                         ></div>
                         <p
-                          className={`text-lg font-semibold ${
-                            user.is_active ? 'text-green-600' : 'text-red-600'
-                          }`}
+                          className={`text-lg font-semibold ${user.is_active ? 'text-green-600' : 'text-red-600'
+                            }`}
                         >
                           {user.is_active ? 'Active' : 'Inactive'}
                         </p>
@@ -548,7 +552,7 @@ export default function EmployeeDashboard() {
                     <RefreshCw className={`w-5 h-5 text-indigo-500 ${isRefreshing ? 'animate-spin' : 'group-hover:rotate-180 transition-transform duration-500'}`} />
                   </button>
                 </div>
-                
+
                 {loadingLeaves || isRefreshing ? (
                   <div className="flex items-center justify-center py-12 bg-white rounded-xl shadow-lg">
                     <div className="text-center">
@@ -610,7 +614,7 @@ export default function EmployeeDashboard() {
                             <h4 className="font-bold text-sm text-gray-800">{leave.leave_type}</h4>
                           </div>
                         </div>
-                        
+
                         <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-lg p-3 mb-3 border border-blue-200">
                           <div className="grid grid-cols-2 gap-2 text-xs">
                             <div>
@@ -631,7 +635,7 @@ export default function EmployeeDashboard() {
                             </div>
                           </div>
                         </div>
-                        
+
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3 text-xs">
                           <div>
                             <p className="text-gray-500 font-medium mb-1">Period</p>

@@ -1,13 +1,13 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
-import { 
-  Users, 
-  Search, 
-  Mail, 
-  Briefcase, 
-  ChevronDown, 
-  CheckCircle, 
+import {
+  Users,
+  Search,
+  Mail,
+  Briefcase,
+  ChevronDown,
+  CheckCircle,
   XCircle,
   Building2,
   CalendarDays,
@@ -20,16 +20,16 @@ import { useDashboard } from '@/contexts/management/AdminContext/DashboardContex
 import { calculateLeaveBalance } from '../../employee/components/leaveBalance';
 
 export default function EmployeeList() {
-  const { 
-    employees, 
-    loading, 
-    error, 
-    fetchEmployeeLeaves, 
-    employeeLeaves, 
+  const {
+    employees,
+    loading,
+    error,
+    fetchEmployeeLeaves,
+    employeeLeaves,
     leavesLoading,
-    approveLeave 
+    approveLeave
   } = useDashboard();
-  
+
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedEmployee, setExpandedEmployee] = useState<string | null>(null);
 
@@ -132,7 +132,7 @@ export default function EmployeeList() {
                     const leaves = employeeLeaves[emp.email] || [];
                     const balance = calculateLeaveBalance(emp, leaves);
                     const isExpanded = expandedEmployee === emp.email;
-                    
+
                     // Check if there are any pending leave requests
                     const hasPendingLeaves = leaves.some(leave => leave.approval_status === 'pending');
                     const pendingCount = leaves.filter(leave => leave.approval_status === 'pending').length;
@@ -144,12 +144,24 @@ export default function EmployeeList() {
                           <td className="px-4 py-3">
                             <div className="flex items-center gap-3">
                               <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
-                                {emp.name.charAt(0).toUpperCase()}
+                                {emp.name
+                                  ?.trim()
+                                  .split(" ")[0]
+                                  .charAt(0)
+                                  .toUpperCase()}
                               </div>
+
                               <div className="min-w-0">
-                                <p className="font-semibold text-gray-900 truncate">{emp.name}</p>
+                                <p className="font-semibold text-gray-900 truncate">
+                                  {emp.name
+                                    ?.toLowerCase()
+                                    .split(" ")
+                                    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                                    .join(" ")}
+                                </p>
                               </div>
                             </div>
+
                           </td>
                           <td className="px-4 py-3">
                             <div className="flex items-center gap-2">
@@ -180,11 +192,10 @@ export default function EmployeeList() {
                           <td className="px-4 py-3 text-center">
                             <button
                               onClick={() => toggleEmployeeLeaves(emp.email)}
-                              className={`relative px-4 py-2 rounded-lg text-sm font-medium inline-flex items-center gap-2 transition-all ${
-                                isExpanded
+                              className={`relative px-4 py-2 rounded-lg text-sm font-medium inline-flex items-center gap-2 transition-all ${isExpanded
                                   ? 'bg-blue-600 text-white shadow-lg'
                                   : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
-                              }`}
+                                }`}
                             >
                               {hasPendingLeaves && !isExpanded && (
                                 <span className="absolute -top-1 -right-1 flex h-5 w-5">
@@ -232,7 +243,7 @@ export default function EmployeeList() {
                                     <p className="text-2xl font-bold text-blue-600">{balance.cl.remaining.toFixed(1)}</p>
                                     <p className="text-xs text-gray-500 mt-1">Remaining of {balance.cl.perYear}</p>
                                   </div>
-                                  
+
                                   {/* EL Card */}
                                   <div className="bg-white border-2 border-green-200 rounded-lg p-4">
                                     <p className="text-xs text-gray-500 font-medium mb-1">Earned Leave (EL)</p>
@@ -241,14 +252,14 @@ export default function EmployeeList() {
                                     </p>
                                     <p className="text-xs text-gray-500 mt-1">Accumulated {balance.el.accumulated.toFixed(1)}</p>
                                   </div>
-                                  
+
                                   {/* HalfDay Card */}
                                   <div className="bg-white border-2 border-orange-200 rounded-lg p-4">
                                     <p className="text-xs text-gray-500 font-medium mb-1">Half Day</p>
                                     <p className="text-2xl font-bold text-orange-600">{balance.halfDay.remaining.toFixed(1)}</p>
                                     <p className="text-xs text-gray-500 mt-1">Used {balance.halfDay.used.toFixed(1)}</p>
                                   </div>
-                                  
+
                                   {/* LWP Card */}
                                   <div className="bg-white border-2 border-red-200 rounded-lg p-4">
                                     <p className="text-xs text-gray-500 font-medium mb-1">Leave Without Pay</p>
@@ -257,7 +268,7 @@ export default function EmployeeList() {
                                   </div>
                                 </div>
                               )}
-                              
+
                               {/* Leave Requests Table */}
                               {leaves.length === 0 ? (
                                 <div className="text-center py-8 bg-white rounded-lg border-2 border-gray-200">
@@ -283,17 +294,16 @@ export default function EmployeeList() {
                                       {leaves.map((leave) => (
                                         <tr key={leave.id} className="hover:bg-blue-50 transition-colors">
                                           <td className="px-4 py-3">
-                                            <span className={`font-bold px-3 py-1.5 rounded-full text-xs ${
-                                              leave.leave_type === 'CL' || leave.leave_type === 'cl' 
+                                            <span className={`font-bold px-3 py-1.5 rounded-full text-xs ${leave.leave_type === 'CL' || leave.leave_type === 'cl'
                                                 ? 'bg-blue-100 text-blue-700 border border-blue-300'
                                                 : leave.leave_type === 'EL' || leave.leave_type === 'el'
-                                                ? 'bg-green-100 text-green-700 border border-green-300'
-                                                : leave.leave_type === 'HalfDay' || leave.leave_type === 'halfday'
-                                                ? 'bg-orange-100 text-orange-700 border border-orange-300'
-                                                : leave.leave_type === 'LWP' || leave.leave_type === 'lwp'
-                                                ? 'bg-red-100 text-red-700 border border-red-300'
-                                                : 'bg-gray-100 text-gray-700 border border-gray-300'
-                                            }`}>
+                                                  ? 'bg-green-100 text-green-700 border border-green-300'
+                                                  : leave.leave_type === 'HalfDay' || leave.leave_type === 'halfday'
+                                                    ? 'bg-orange-100 text-orange-700 border border-orange-300'
+                                                    : leave.leave_type === 'LWP' || leave.leave_type === 'lwp'
+                                                      ? 'bg-red-100 text-red-700 border border-red-300'
+                                                      : 'bg-gray-100 text-gray-700 border border-gray-300'
+                                              }`}>
                                               {leave.leave_type}
                                             </span>
                                           </td>
@@ -304,13 +314,12 @@ export default function EmployeeList() {
                                           </td>
                                           <td className="px-4 py-3 text-gray-700 max-w-xs truncate">{leave.reason}</td>
                                           <td className="px-4 py-3 text-center">
-                                            <span className={`px-3 py-1.5 rounded-full text-xs font-bold ${
-                                              leave.approval_status === 'approved'
+                                            <span className={`px-3 py-1.5 rounded-full text-xs font-bold ${leave.approval_status === 'approved'
                                                 ? 'bg-green-100 text-green-700 border border-green-300'
                                                 : leave.approval_status === 'rejected'
-                                                ? 'bg-red-100 text-red-700 border border-red-300'
-                                                : 'bg-yellow-100 text-yellow-700 border border-yellow-300'
-                                            }`}>
+                                                  ? 'bg-red-100 text-red-700 border border-red-300'
+                                                  : 'bg-yellow-100 text-yellow-700 border border-yellow-300'
+                                              }`}>
                                               {leave.approval_status.toUpperCase()}
                                             </span>
                                           </td>
@@ -319,11 +328,10 @@ export default function EmployeeList() {
                                             <div className="flex gap-2 justify-center">
                                               <button
                                                 onClick={() => handleApprove(leave.id, emp.email, 'approved')}
-                                                className={`p-2 rounded-lg transition-all ${
-                                                  leave.approval_status === 'approved'
+                                                className={`p-2 rounded-lg transition-all ${leave.approval_status === 'approved'
                                                     ? 'bg-green-200 text-green-800 cursor-not-allowed'
                                                     : 'bg-green-500 hover:bg-green-600 text-white shadow-md hover:shadow-lg'
-                                                }`}
+                                                  }`}
                                                 disabled={leavesLoading[emp.email] || leave.approval_status === 'approved'}
                                                 title="Approve"
                                               >
@@ -331,11 +339,10 @@ export default function EmployeeList() {
                                               </button>
                                               <button
                                                 onClick={() => handleApprove(leave.id, emp.email, 'rejected')}
-                                                className={`p-2 rounded-lg transition-all ${
-                                                  leave.approval_status === 'rejected'
+                                                className={`p-2 rounded-lg transition-all ${leave.approval_status === 'rejected'
                                                     ? 'bg-red-200 text-red-800 cursor-not-allowed'
                                                     : 'bg-red-500 hover:bg-red-600 text-white shadow-md hover:shadow-lg'
-                                                }`}
+                                                  }`}
                                                 disabled={leavesLoading[emp.email] || leave.approval_status === 'rejected'}
                                                 title="Reject"
                                               >
