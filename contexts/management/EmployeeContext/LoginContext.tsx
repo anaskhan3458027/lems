@@ -1,4 +1,3 @@
-// contexts/management/EmployeeContext/LoginContext.tsx
 "use client";
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
@@ -12,9 +11,9 @@ interface User {
   supervisor_name: string | null;
   supervisor_email: string | null;
   projectName: string | null;
-  joining_date: string | null;      // ✅ NEW FIELD
-  position: string | null;          // ✅ NEW FIELD
-  resign_date: string | null;       // ✅ NEW FIELD
+  joining_date: string | null;
+  position: string | null;
+  resign_date: string | null;
   is_active: boolean;
   last_login?: string;
   token?: string;
@@ -30,11 +29,27 @@ interface LoginContextType {
   checkAuthStatus: () => Promise<boolean>;
 }
 
+interface ForgotPasswordContextType {
+  sendOTP: (email: string, userType: string) => Promise<boolean>;
+  verifyOTP: (email: string, otp: string, userType: string) => Promise<boolean>;
+  resetPassword: (email: string, userType: string, newPassword: string, otp: string) => Promise<boolean>;
+  isLoading: boolean;
+  error: string;
+  successMessage: string;
+}
+
 const LoginContext = createContext<LoginContextType | undefined>(undefined);
+const ForgotPasswordContext = createContext<ForgotPasswordContextType | undefined>(undefined);
 
 export const useLogin = () => {
   const context = useContext(LoginContext);
   if (!context) throw new Error('useLogin must be used within LoginProvider');
+  return context;
+};
+
+export const useForgotPassword = () => {
+  const context = useContext(ForgotPasswordContext);
+  if (!context) throw new Error('useForgotPassword must be used within LoginProvider');
   return context;
 };
 
@@ -43,6 +58,11 @@ export const LoginProvider = ({ children }: { children: ReactNode }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+
+  // Forgot Password states
+  const [fpLoading, setFpLoading] = useState(false);
+  const [fpError, setFpError] = useState('');
+  const [fpSuccess, setFpSuccess] = useState('');
 
   useEffect(() => {
     const initAuth = async () => {
@@ -77,9 +97,9 @@ export const LoginProvider = ({ children }: { children: ReactNode }) => {
           supervisor_email: data.user.supervisor_email ?? null,
           supervisor_name: data.user.supervisor_name ?? null,
           projectName: data.user.projectName ?? null,
-          joining_date: data.user.joining_date ?? null,      // ✅ NEW FIELD
-          position: data.user.position ?? null,              // ✅ NEW FIELD
-          resign_date: data.user.resign_date ?? null,        // ✅ NEW FIELD
+          joining_date: data.user.joining_date ?? null,
+          position: data.user.position ?? null,
+          resign_date: data.user.resign_date ?? null,
           token,
         };
         setUser(userData);
@@ -134,9 +154,9 @@ export const LoginProvider = ({ children }: { children: ReactNode }) => {
           supervisor_email: data.user.supervisor_email ?? null,
           supervisor_name: data.user.supervisor_name ?? null,
           projectName: data.user.projectName ?? null,
-          joining_date: data.user.joining_date ?? null,      // ✅ NEW FIELD
-          position: data.user.position ?? null,              // ✅ NEW FIELD
-          resign_date: data.user.resign_date ?? null,        // ✅ NEW FIELD
+          joining_date: data.user.joining_date ?? null,
+          position: data.user.position ?? null,
+          resign_date: data.user.resign_date ?? null,
           token: data.token,
         };
 
@@ -167,9 +187,9 @@ export const LoginProvider = ({ children }: { children: ReactNode }) => {
       supervisor_email: userData.supervisor_email ?? null,
       supervisor_name: userData.supervisor_name ?? null,
       projectName: userData.projectName ?? null,
-      joining_date: userData.joining_date ?? null,      // ✅ NEW FIELD
-      position: userData.position ?? null,              // ✅ NEW FIELD
-      resign_date: userData.resign_date ?? null,        // ✅ NEW FIELD
+      joining_date: userData.joining_date ?? null,
+      position: userData.position ?? null,
+      resign_date: userData.resign_date ?? null,
     };
     setUser(completeUserData);
     setError('');
@@ -210,6 +230,108 @@ export const LoginProvider = ({ children }: { children: ReactNode }) => {
       localStorage.removeItem('employeeAuthToken');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // Forgot Password Functions
+  const sendOTP = async (email: string, userType: string): Promise<boolean> => {
+    setFpLoading(true);
+    setFpError('');
+    setFpSuccess('');
+
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/django/management/send-otp`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, user_type: userType })
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        setFpSuccess(data.message);
+        return true;
+      } else {
+        setFpError(data.message || 'Failed to send OTP');
+        return false;
+      }
+    } catch (err) {
+      console.error('Send OTP error:', err);
+      setFpError('An error occurred. Please try again.');
+      return false;
+    } finally {
+      setFpLoading(false);
+    }
+  };
+
+  const verifyOTP = async (email: string, otp: string, userType: string): Promise<boolean> => {
+    setFpLoading(true);
+    setFpError('');
+    setFpSuccess('');
+
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/django/management/verify-otp`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, otp, user_type: userType })
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        setFpSuccess(data.message);
+        return true;
+      } else {
+        setFpError(data.message || 'Invalid OTP');
+        return false;
+      }
+    } catch (err) {
+      console.error('Verify OTP error:', err);
+      setFpError('An error occurred. Please try again.');
+      return false;
+    } finally {
+      setFpLoading(false);
+    }
+  };
+
+  const resetPassword = async (email: string, userType: string, newPassword: string, otp: string): Promise<boolean> => {
+    setFpLoading(true);
+    setFpError('');
+    setFpSuccess('');
+
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/django/management/reset-password`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          email, 
+          user_type: userType, 
+          new_password: newPassword,
+          otp 
+        })
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        setFpSuccess(data.message);
+        return true;
+      } else {
+        setFpError(data.message || 'Failed to reset password');
+        return false;
+      }
+    } catch (err) {
+      console.error('Reset password error:', err);
+      setFpError('An error occurred. Please try again.');
+      return false;
+    } finally {
+      setFpLoading(false);
     }
   };
 
@@ -257,7 +379,16 @@ export const LoginProvider = ({ children }: { children: ReactNode }) => {
         checkAuthStatus,
       }}
     >
-      {children}
+      <ForgotPasswordContext.Provider value={{
+        sendOTP,
+        verifyOTP,
+        resetPassword,
+        isLoading: fpLoading,
+        error: fpError,
+        successMessage: fpSuccess
+      }}>
+        {children}
+      </ForgotPasswordContext.Provider>
     </LoginContext.Provider>
   );
 };

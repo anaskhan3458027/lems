@@ -1,4 +1,3 @@
-// contexts/management/AdminContext/LoginContext.tsx
 "use client";
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
@@ -23,11 +22,27 @@ interface LoginContextType {
   checkAuthStatus: () => Promise<boolean>;
 }
 
+interface ForgotPasswordContextType {
+  sendOTP: (email: string, userType: string) => Promise<boolean>;
+  verifyOTP: (email: string, otp: string, userType: string) => Promise<boolean>;
+  resetPassword: (email: string, userType: string, newPassword: string, otp: string) => Promise<boolean>;
+  isLoading: boolean;
+  error: string;
+  successMessage: string;
+}
+
 const LoginContext = createContext<LoginContextType | undefined>(undefined);
+const ForgotPasswordContext = createContext<ForgotPasswordContextType | undefined>(undefined);
 
 export const useLogin = () => {
   const context = useContext(LoginContext);
   if (!context) throw new Error('useLogin must be used within LoginProvider');
+  return context;
+};
+
+export const useForgotPassword = () => {
+  const context = useContext(ForgotPasswordContext);
+  if (!context) throw new Error('useForgotPassword must be used within LoginProvider');
   return context;
 };
 
@@ -36,8 +51,12 @@ export const LoginProvider = ({ children }: { children: ReactNode }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+  
+  // Forgot Password states
+  const [fpLoading, setFpLoading] = useState(false);
+  const [fpError, setFpError] = useState('');
+  const [fpSuccess, setFpSuccess] = useState('');
 
-  // ✅ Check authentication status on mount
   useEffect(() => {
     const initAuth = async () => {
       await checkAuthStatus();
@@ -46,7 +65,6 @@ export const LoginProvider = ({ children }: { children: ReactNode }) => {
     initAuth();
   }, []);
 
-  // ✅ Check if user is still authenticated
   const checkAuthStatus = async (): Promise<boolean> => {
     const token = localStorage.getItem('adminAuthToken');
 
@@ -56,7 +74,6 @@ export const LoginProvider = ({ children }: { children: ReactNode }) => {
     }
 
     try {
-      // Verify token with backend
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/django/management/admindata`, {
         method: 'GET',
         headers: {
@@ -66,11 +83,8 @@ export const LoginProvider = ({ children }: { children: ReactNode }) => {
       });
 
       if (response.ok) {
-        const data = await response.json();
-        // Token is valid, keep user logged in
         return true;
       } else {
-        // Token invalid, clear it
         localStorage.removeItem('adminAuthToken');
         setUser(null);
         return false;
@@ -88,14 +102,12 @@ export const LoginProvider = ({ children }: { children: ReactNode }) => {
     setError('');
 
     try {
-      // Validate inputs
       if (!email || !password) {
         setError('Please fill in all fields');
         setIsLoading(false);
         return false;
       }
 
-      // Email validation
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(email)) {
         setError('Please enter a valid email address');
@@ -103,7 +115,6 @@ export const LoginProvider = ({ children }: { children: ReactNode }) => {
         return false;
       }
 
-      // Call backend LOGIN API
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/django/management/login`, {
         method: 'POST',
         headers: {
@@ -117,7 +128,6 @@ export const LoginProvider = ({ children }: { children: ReactNode }) => {
 
       const data = await response.json();
 
-      // Check if login was successful
       if (response.ok && data.success) {
         const userData: User = {
           ...data.user,
@@ -127,7 +137,6 @@ export const LoginProvider = ({ children }: { children: ReactNode }) => {
         setUser(userData);
         setError('');
 
-        // ✅ Store token in localStorage
         if (data.token) {
           localStorage.setItem('adminAuthToken', data.token);
         }
@@ -146,7 +155,6 @@ export const LoginProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  // Direct login with user data (used after registration)
   const loginWithUserData = (userData: any) => {
     const completeUserData: User = {
       ...userData,
@@ -156,7 +164,6 @@ export const LoginProvider = ({ children }: { children: ReactNode }) => {
     setUser(completeUserData);
     setError('');
 
-    // ✅ Store token
     if (userData.token) {
       localStorage.setItem('adminAuthToken', userData.token);
     }
@@ -169,7 +176,6 @@ export const LoginProvider = ({ children }: { children: ReactNode }) => {
       const token = localStorage.getItem('adminAuthToken');
 
       if (token) {
-        // Call backend LOGOUT API
         const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/django/management/logout`, {
           method: 'POST',
           headers: {
@@ -184,14 +190,12 @@ export const LoginProvider = ({ children }: { children: ReactNode }) => {
         }
       }
 
-      // Clear user data and token
       setUser(null);
       setError('');
       localStorage.removeItem('adminAuthToken');
 
     } catch (err) {
       console.error('Logout error:', err);
-      // Still clear local data even if API fails
       setUser(null);
       setError('');
       localStorage.removeItem('adminAuthToken');
@@ -200,7 +204,108 @@ export const LoginProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  // ✅ Show loading screen while checking authentication
+  // Forgot Password Functions
+  const sendOTP = async (email: string, userType: string): Promise<boolean> => {
+    setFpLoading(true);
+    setFpError('');
+    setFpSuccess('');
+
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/django/management/send-otp`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, user_type: userType })
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        setFpSuccess(data.message);
+        return true;
+      } else {
+        setFpError(data.message || 'Failed to send OTP');
+        return false;
+      }
+    } catch (err) {
+      console.error('Send OTP error:', err);
+      setFpError('An error occurred. Please try again.');
+      return false;
+    } finally {
+      setFpLoading(false);
+    }
+  };
+
+  const verifyOTP = async (email: string, otp: string, userType: string): Promise<boolean> => {
+    setFpLoading(true);
+    setFpError('');
+    setFpSuccess('');
+
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/django/management/verify-otp`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, otp, user_type: userType })
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        setFpSuccess(data.message);
+        return true;
+      } else {
+        setFpError(data.message || 'Invalid OTP');
+        return false;
+      }
+    } catch (err) {
+      console.error('Verify OTP error:', err);
+      setFpError('An error occurred. Please try again.');
+      return false;
+    } finally {
+      setFpLoading(false);
+    }
+  };
+
+  const resetPassword = async (email: string, userType: string, newPassword: string, otp: string): Promise<boolean> => {
+    setFpLoading(true);
+    setFpError('');
+    setFpSuccess('');
+
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/django/management/reset-password`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          email, 
+          user_type: userType, 
+          new_password: newPassword,
+          otp 
+        })
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        setFpSuccess(data.message);
+        return true;
+      } else {
+        setFpError(data.message || 'Failed to reset password');
+        return false;
+      }
+    } catch (err) {
+      console.error('Reset password error:', err);
+      setFpError('An error occurred. Please try again.');
+      return false;
+    } finally {
+      setFpLoading(false);
+    }
+  };
+
   if (isCheckingAuth) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
@@ -243,7 +348,16 @@ export const LoginProvider = ({ children }: { children: ReactNode }) => {
       error,
       checkAuthStatus
     }}>
-      {children}
+      <ForgotPasswordContext.Provider value={{
+        sendOTP,
+        verifyOTP,
+        resetPassword,
+        isLoading: fpLoading,
+        error: fpError,
+        successMessage: fpSuccess
+      }}>
+        {children}
+      </ForgotPasswordContext.Provider>
     </LoginContext.Provider>
   );
 };
