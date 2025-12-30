@@ -1,8 +1,8 @@
-// components/management/employee/components/leave.tsx
+// components/management/employee/components/applyleave.tsx
 'use client';
 
 import { useState, ChangeEvent, useEffect } from 'react';
-import { Calendar, FileText, User, Mail, UserCheck, X, Send, Briefcase, CalendarDays } from 'lucide-react';
+import { Calendar, FileText, User, Mail, UserCheck, X, Send, Briefcase, CalendarDays, AlertCircle } from 'lucide-react';
 import { useLogin } from '@/contexts/management/EmployeeContext/LoginContext';
 import { useLeave } from '@/contexts/management/EmployeeContext/ApplyLeaveContext';
 
@@ -44,6 +44,10 @@ export default function LeaveRequestForm({ onClose }: LeaveRequestFormProps) {
     return null;
   }
 
+  // ✅ Check if user is JRF or YP
+  const isJRF = user.position?.toLowerCase().includes('jrf');
+  const isYP = user.position?.toLowerCase().includes('yp');
+
   const handleSubmit = async () => {
     setLocalError('');
 
@@ -59,6 +63,18 @@ export default function LeaveRequestForm({ onClose }: LeaveRequestFormProps) {
 
     if (!user.supervisor_email) {
       setLocalError('No supervisor email assigned');
+      return;
+    }
+
+    // ✅ Prevent JRF from applying for EL
+    if (isJRF && (leaveType === 'EL' || leaveType === 'el')) {
+      setLocalError('JRF position is not eligible for Earned Leave (EL)');
+      return;
+    }
+
+    // ✅ Prevent YP from applying for CL or EL
+    if (isYP && (leaveType === 'CL' || leaveType === 'cl' || leaveType === 'EL' || leaveType === 'el')) {
+      setLocalError('YP position can only apply for Normal Leave, Half Day, or LWP');
       return;
     }
 
@@ -137,7 +153,7 @@ export default function LeaveRequestForm({ onClose }: LeaveRequestFormProps) {
                 <span className="font-semibold text-gray-800 break-all">{user.email}</span>
               </div>
             </div>
-            {/* ✅ NEW: Position */}
+            {/* ✅ Position */}
             <div className="space-y-1">
               <p className="text-xs font-medium text-gray-500">Position</p>
               <div className="flex items-center gap-2 text-sm bg-white border border-purple-200 rounded-lg px-3 py-2">
@@ -145,7 +161,7 @@ export default function LeaveRequestForm({ onClose }: LeaveRequestFormProps) {
                 <span className="font-semibold text-gray-800">{user.position || 'N/A'}</span>
               </div>
             </div>
-            {/* ✅ NEW: Joining Date */}
+            {/* ✅ Joining Date */}
             <div className="space-y-1">
               <p className="text-xs font-medium text-gray-500">Joining Date</p>
               <div className="flex items-center gap-2 text-sm bg-white border border-purple-200 rounded-lg px-3 py-2">
@@ -213,11 +229,40 @@ export default function LeaveRequestForm({ onClose }: LeaveRequestFormProps) {
               onChange={(e) => setLeaveType(e.target.value)}
             >
               <option value="">Select Leave Type</option>
-              <option value="CL">Casual Leave (CL)</option>
-              <option value="EL">Earned Leave (EL)</option>
-              <option value="HalfDay">Half Day</option>
-              <option value="LWP">Leave Without Pay (LWP)</option>
+              
+              {/* ✅ For YP: Show only Normal Leave, Half Day, LWP */}
+              {isYP ? (
+                <>
+                  <option value="NormalLeave">Normal Leave (NL)</option>
+                  <option value="HalfDay">Half Day</option>
+                  <option value="LWP">Leave Without Pay (LWP)</option>
+                </>
+              ) : (
+                <>
+                  {/* ✅ For non-YP: Show CL, EL (hide EL for JRF), Half Day, LWP */}
+                  <option value="CL">Casual Leave (CL)</option>
+                  {!isJRF && <option value="EL">Earned Leave (EL)</option>}
+                  <option value="HalfDay">Half Day</option>
+                  <option value="LWP">Leave Without Pay (LWP)</option>
+                </>
+              )}
             </select>
+
+            {/* ✅ Show notice for JRF users */}
+            {isJRF && (
+              <p className="text-xs text-amber-600 mt-1 flex items-center gap-1">
+                <AlertCircle className="w-3 h-3" />
+                JRF position is not eligible for Earned Leave (EL)
+              </p>
+            )}
+
+            {/* ✅ Show notice for YP users */}
+            {isYP && (
+              <p className="text-xs text-blue-600 mt-1 flex items-center gap-1">
+                <AlertCircle className="w-3 h-3" />
+                YP position: Normal Leave allocated at 1.5 days/month from Jan 2026. Half days deduct 0.5 from Normal Leave.
+              </p>
+            )}
           </div>
 
           {/* Reason */}

@@ -234,41 +234,7 @@ export default function EmployeeList() {
                                 )}
                               </div>
 
-                              {/* Leave Balance Summary */}
-                              {balance && (
-                                <div className="mb-4 grid grid-cols-1 md:grid-cols-4 gap-4">
-                                  {/* CL Card */}
-                                  <div className="bg-white border-2 border-blue-200 rounded-lg p-4">
-                                    <p className="text-xs text-gray-500 font-medium mb-1">Casual Leave (CL)</p>
-                                    <p className="text-2xl font-bold text-blue-600">{balance.cl.remaining.toFixed(1)}</p>
-                                    <p className="text-xs text-gray-500 mt-1">Remaining of {balance.cl.perYear}</p>
-                                  </div>
-
-                                  {/* EL Card */}
-                                  <div className="bg-white border-2 border-green-200 rounded-lg p-4">
-                                    <p className="text-xs text-gray-500 font-medium mb-1">Earned Leave (EL)</p>
-                                    <p className={`text-2xl font-bold ${balance.el.remaining < 0 ? 'text-red-600' : 'text-green-600'}`}>
-                                      {balance.el.remaining.toFixed(1)}
-                                    </p>
-                                    <p className="text-xs text-gray-500 mt-1">Accumulated {balance.el.accumulated.toFixed(1)}</p>
-                                  </div>
-
-                                  {/* HalfDay Card */}
-                                  <div className="bg-white border-2 border-orange-200 rounded-lg p-4">
-                                    <p className="text-xs text-gray-500 font-medium mb-1">Half Day</p>
-                                    <p className="text-2xl font-bold text-orange-600">{balance.halfDay.remaining.toFixed(1)}</p>
-                                    <p className="text-xs text-gray-500 mt-1">Used {balance.halfDay.used.toFixed(1)}</p>
-                                  </div>
-
-                                  {/* LWP Card */}
-                                  <div className="bg-white border-2 border-red-200 rounded-lg p-4">
-                                    <p className="text-xs text-gray-500 font-medium mb-1">Leave Without Pay</p>
-                                    <p className="text-2xl font-bold text-red-600">{balance.lwp.remaining.toFixed(1)}</p>
-                                    <p className="text-xs text-gray-500 mt-1">Used {balance.lwp.used.toFixed(1)}</p>
-                                  </div>
-                                </div>
-                              )}
-
+                              
                               {/* Leave Requests Table */}
                               {leaves.length === 0 ? (
                                 <div className="text-center py-8 bg-white rounded-lg border-2 border-gray-200">
