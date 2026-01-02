@@ -102,7 +102,7 @@ export default function AdminLogin({ onSwitchToRegister }: LoginProps) {
             </div>
 
             <div className="text-center pt-4 border-t border-gray-200">
-              <p className="text-gray-600">
+              {/* <p className="text-gray-600">
                 Don't have an account?{' '}
                 <button
                   onClick={onSwitchToRegister}
@@ -111,7 +111,7 @@ export default function AdminLogin({ onSwitchToRegister }: LoginProps) {
                 >
                   Register Now
                 </button>
-              </p>
+              </p> */}
             </div>
           </div>
         </div>
