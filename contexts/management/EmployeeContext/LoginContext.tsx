@@ -73,49 +73,52 @@ export const LoginProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const checkAuthStatus = async (): Promise<boolean> => {
-    const token = localStorage.getItem('employeeAuthToken');
+  const token = localStorage.getItem('employeeAuthToken');
 
-    if (!token) {
-      setUser(null);
-      return false;
-    }
+  if (!token) {
+    setUser(null);
+    return false;
+  }
 
-    try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/django/management/status/employee`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-      });
+  try {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/django/management/status/employee`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+    });
 
-      const data = await response.json();
+    const data = await response.json();
 
-      if (response.ok && data.success && data.is_active) {
-        const userData: User = {
-          ...data.user,
-          supervisor_email: data.user.supervisor_email ?? null,
-          supervisor_name: data.user.supervisor_name ?? null,
-          projectName: data.user.projectName ?? null,
-          joining_date: data.user.joining_date ?? null,
-          position: data.user.position ?? null,
-          resign_date: data.user.resign_date ?? null,
-          token,
-        };
-        setUser(userData);
-        return true;
-      } else {
-        localStorage.removeItem('employeeAuthToken');
-        setUser(null);
-        return false;
-      }
-    } catch (err) {
-      console.error('Auth check error:', err);
+    // Remove the check for data.is_active here
+    if (response.ok && data.success) {
+      const userData: User = {
+        ...data.user,
+        supervisor_email: data.user.supervisor_email ?? null,
+        supervisor_name: data.user.supervisor_name ?? null,
+        projectName: data.user.projectName ?? null,
+        joining_date: data.user.joining_date ?? null,
+        position: data.user.position ?? null,
+        resign_date: data.user.resign_date ?? null,
+        token,
+        // Make sure is_active is properly set from the API response
+        is_active: data.user.is_active ?? data.is_active ?? false,
+      };
+      setUser(userData);
+      return true;
+    } else {
       localStorage.removeItem('employeeAuthToken');
       setUser(null);
       return false;
     }
-  };
+  } catch (err) {
+    console.error('Auth check error:', err);
+    localStorage.removeItem('employeeAuthToken');
+    setUser(null);
+    return false;
+  }
+};
 
   const login = async (email: string, password: string): Promise<boolean> => {
     setIsLoading(true);
